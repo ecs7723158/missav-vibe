@@ -1,0 +1,12 @@
+# Python
+crawler-python/venv/
+crawler-python/__pycache__/
+*.pyc
+
+# Go
+backend-go/backend-go
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/

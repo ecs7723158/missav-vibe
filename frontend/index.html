@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MISSAV VIBE - 免廣告串流優化與 Vibe Agent 監控系統</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HLS.js for Streaming -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#0a0d14',
+                            card: '#121722',
+                            border: '#1e293b',
+                            accent: '#6366f1',
+                            neon: '#06b6d4',
+                            emerald: '#10b981',
+                            amber: '#f59e0b',
+                            rose: '#f43f5e'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar for Terminal and Sidebar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0d14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+        
+        .glass-panel {
+            background: rgba(18, 23, 34, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glow-accent {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.25);
+        }
+
+        .terminal-line {
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-cyber-bg text-slate-100 font-sans antialiased min-h-screen flex flex-col overflow-x-hidden selection:bg-cyber-accent selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="glass-panel sticky top-0 z-50 border-b border-cyber-border px-6 py-3 flex items-center justify-between">
+        <!-- Logo & Title -->
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyber-accent to-cyber-neon flex items-center justify-center shadow-lg glow-accent">
+                <i class="fa-solid fa-play text-white text-lg"></i>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h1 class="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">MISSAV VIBE</h1>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-cyber-accent/20 text-cyber-accent font-mono font-medium border border-cyber-accent/30">v1.0 Stream Optimizer</span>
+                </div>
+                <p class="text-xs text-slate-400 font-mono">Ad-Free HLS Proxy & Real-Time Agent Control System</p>
+            </div>
+        </div>
+
+        <!-- System Health Badges & Controls -->
+        <div class="flex items-center space-x-4">
+            <!-- Go Proxy Status -->
+            <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono">
+                <span id="badge-go-dot" class="w-2 h-2 rounded-full bg-slate-500 animate-pulse"></span>
+                <span class="text-slate-400">Go Proxy (8080):</span>
+                <span id="badge-go-text" class="text-slate-300 font-semibold">Checking...</span>
+            </div>
+
+            <!-- Python Agent Status -->
+            <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono">
+                <span id="badge-py-dot" class="w-2 h-2 rounded-full bg-slate-500 animate-pulse"></span>
+                <span class="text-slate-400">Python Brain (8000):</span>
+                <span id="badge-py-text" class="text-slate-300 font-semibold">Checking...</span>
+            </div>
+
+            <!-- WS Connection Status -->
+            <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono">
+                <span id="badge-ws-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+                <span class="text-slate-400">WS Gateway:</span>
+                <span id="badge-ws-text" class="text-slate-300 font-semibold">Disconnected</span>
+            </div>
+
+            <!-- Trigger Crawl Button -->
+            <button id="btn-trigger-crawl" onclick="triggerCrawlSession()" class="flex items-center space-x-2 px-3.5 py-1.5 rounded-lg bg-cyber-accent hover:bg-cyber-accent/80 text-white text-xs font-semibold transition-all shadow-md active:scale-95">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Trigger Agent Crawl</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Layout Grid -->
+    <div class="flex-1 grid grid-cols-12 gap-4 p-4 max-w-[1920px] mx-auto w-full h-[calc(100vh-65px)]">
+
+        <!-- Left Sidebar: Virtual Ranking List (Col 3) -->
+        <aside class="col-span-12 lg:col-span-3 glass-panel rounded-2xl flex flex-col overflow-hidden border border-cyber-border">
+            <div class="p-4 border-b border-cyber-border flex items-center justify-between bg-slate-900/40">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-fire text-amber-400"></i>
+                    <h2 class="font-bold text-sm text-slate-200">Virtual Ranking Matrix</h2>
+                </div>
+                <span id="ranking-count" class="text-xs bg-slate-800 text-slate-400 font-mono px-2 py-0.5 rounded-md">0 Videos</span>
+            </div>
+
+            <!-- Search / Filter Box -->
+            <div class="p-3 border-b border-cyber-border/50 bg-slate-950/30">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-xs text-slate-500"></i>
+                    <input type="text" id="ranking-search" placeholder="Filter code, actress, title..." onkeyup="filterRankings()" class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyber-accent transition-colors font-mono">
+                </div>
+            </div>
+
+            <!-- Rankings Container -->
+            <div id="rankings-list" class="flex-1 overflow-y-auto p-3 space-y-3">
+                <!-- Loading State -->
+                <div class="flex flex-col items-center justify-center h-48 text-slate-500 space-y-2">
+                    <i class="fa-solid fa-circle-notch fa-spin text-xl text-cyber-accent"></i>
+                    <p class="text-xs font-mono">Fetching rankings from Python Agent...</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center Section: Media Player & Stream Proxy Controls (Col 5) -->
+        <main class="col-span-12 lg:col-span-5 flex flex-col space-y-4">
+            
+            <!-- Video Player Card -->
+            <div class="glass-panel rounded-2xl p-4 flex flex-col border border-cyber-border space-y-3">
+                <!-- Player Header -->
+                <div class="flex items-center justify-between border-b border-cyber-border pb-3">
+                    <div class="flex items-center space-x-2 overflow-hidden">
+                        <span id="player-code" class="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-cyber-accent/20 text-cyber-accent border border-cyber-accent/30">SELECT VIDEO</span>
+                        <h3 id="player-title" class="text-sm font-semibold text-slate-200 truncate max-w-xs">Click any item from rankings to load stream</h3>
+                    </div>
+                    <div class="flex items-center space-x-2 flex-shrink-0">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <i class="fa-solid fa-shield-halved mr-1"></i> AD-FREE SHIELD
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Video Frame Window -->
+                <div class="relative w-full aspect-video bg-slate-950 rounded-xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center group">
+                    <video id="hls-video" controls class="w-full h-full object-contain hidden"></video>
+
+                    <!-- Placeholder Screen -->
+                    <div id="video-placeholder" class="flex flex-col items-center justify-center p-6 text-center space-y-3">
+                        <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-cyber-neon text-2xl group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-clapperboard"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-300">No Active Stream Loaded</p>
+                            <p class="text-xs text-slate-500 max-w-sm mt-1">Select a video from the virtual ranking matrix on the left or paste a custom m3u8 URL below.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Stream Proxy Input Bar -->
+                <div class="bg-slate-900/90 rounded-xl p-3 border border-slate-800 space-y-2">
+                    <label class="text-[11px] font-mono font-semibold text-slate-400 flex items-center justify-between">
+                        <span><i class="fa-solid fa-link text-cyber-neon mr-1"></i> TARGET M3U8 STREAM URL</span>
+                        <span class="text-slate-500 text-[10px]">Spoofing Referer: missav.com</span>
+                    </label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="stream-url-input" placeholder="https://.../playlist.m3u8" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyber-accent">
+                        <button onclick="playCustomProxyStream()" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold font-mono transition-colors shadow flex items-center space-x-1">
+                            <i class="fa-solid fa-play text-[10px]"></i>
+                            <span>Proxy Play</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stream Metadata Badges -->
+                <div class="grid grid-cols-3 gap-2 text-center text-xs font-mono pt-1">
+                    <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800/80">
+                        <span class="text-slate-500 block text-[10px]">PROXY HEADER</span>
+                        <span class="text-emerald-400 font-semibold text-[11px]">SPOOFED OK</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800/80">
+                        <span class="text-slate-500 block text-[10px]">PORT</span>
+                        <span class="text-cyber-neon font-semibold text-[11px]">Go :8080</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800/80">
+                        <span class="text-slate-500 block text-[10px]">LATENCY</span>
+                        <span id="stream-latency" class="text-amber-400 font-semibold text-[11px]">~ 24ms</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right / Bottom Panel: Real-Time Vibe Terminal (Col 4) -->
+        <section class="col-span-12 lg:col-span-4 glass-panel rounded-2xl flex flex-col overflow-hidden border border-cyber-border">
+            <!-- Terminal Header -->
+            <div class="p-3.5 border-b border-cyber-border bg-slate-950/80 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="flex space-x-1.5 mr-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                    </div>
+                    <i class="fa-solid fa-terminal text-cyber-neon text-xs"></i>
+                    <h2 class="font-mono font-bold text-xs text-slate-200 tracking-wide">VIBE AGENT TERMINAL</h2>
+                </div>
+
+                <!-- Terminal Actions -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="clearTerminal()" class="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded bg-slate-800/60 hover:bg-slate-800 transition-colors font-mono">
+                        <i class="fa-solid fa-trash-can mr-1"></i> Clear
+                    </button>
+                    <label class="flex items-center space-x-1 text-[11px] font-mono text-slate-400 cursor-pointer">
+                        <input type="checkbox" id="autoscroll-toggle" checked class="rounded bg-slate-900 border-slate-700 text-cyber-accent focus:ring-0">
+                        <span>Auto-scroll</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Terminal Filter Bar -->
+            <div class="px-3 py-2 border-b border-cyber-border/40 bg-slate-900/40 flex items-center space-x-2 overflow-x-auto text-[11px] font-mono">
+                <span class="text-slate-500">Filter:</span>
+                <button onclick="filterLogs('ALL')" class="log-filter-btn px-2 py-0.5 rounded bg-cyber-accent text-white font-semibold" data-level="ALL">ALL</button>
+                <button onclick="filterLogs('INFO')" class="log-filter-btn px-2 py-0.5 rounded bg-slate-800 text-slate-400 hover:text-slate-200" data-level="INFO">INFO</button>
+                <button onclick="filterLogs('SUCCESS')" class="log-filter-btn px-2 py-0.5 rounded bg-slate-800 text-slate-400 hover:text-slate-200" data-level="SUCCESS">SUCCESS</button>
+                <button onclick="filterLogs('CRAWLER')" class="log-filter-btn px-2 py-0.5 rounded bg-slate-800 text-slate-400 hover:text-slate-200" data-level="CRAWLER">CRAWLER</button>
+            </div>
+
+            <!-- Terminal Output Window -->
+            <div id="terminal-body" class="flex-1 bg-slate-950 p-4 font-mono text-xs overflow-y-auto space-y-2 selection:bg-slate-800">
+                <div class="terminal-line text-slate-500 italic">
+                    [SYSTEM] Terminal ready. Connecting to WebSocket gateway at ws://localhost:8080/ws/client...
+                </div>
+            </div>
+
+            <!-- Terminal Footer Status Bar -->
+            <div class="px-4 py-2 border-t border-cyber-border bg-slate-950/90 flex items-center justify-between text-[11px] font-mono text-slate-500">
+                <span>Received: <strong id="log-count" class="text-slate-300">0</strong> events</span>
+                <span id="terminal-ws-indicator" class="text-rose-400">● WS Disconnected</span>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Frontend Application Logic Script -->
+    <script>
+        const GO_API_URL = 'http://localhost:8080';
+        const PYTHON_API_URL = 'http://localhost:8000';
+        const WS_URL = 'ws://localhost:8080/ws/client';
+
+        let rankingsData = [];
+        let hlsPlayer = null;
+        let wsConn = null;
+        let totalLogCount = 0;
+        let currentFilter = 'ALL';
+
+        // Initialize App on DOM Load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkServiceHealth();
+            fetchRankings();
+            initWebSocket();
+
+            // Periodic Health Check every 8 seconds
+            setInterval(checkServiceHealth, 8000);
+        });
+
+        // 1. Service Health Check
+        async function checkServiceHealth() {
+            // Check Go Proxy
+            try {
+                const res = await fetch(`${GO_API_URL}/health`, { method: 'GET' });
+                if (res.ok) {
+                    setBadge('go', true, 'Online');
+                } else {
+                    setBadge('go', false, 'Error');
+                }
+            } catch (e) {
+                setBadge('go', false, 'Offline');
+            }
+
+            // Check Python Crawler
+            try {
+                const res = await fetch(`${PYTHON_API_URL}/api/status`, { method: 'GET' });
+                if (res.ok) {
+                    setBadge('py', true, 'Online');
+                } else {
+                    setBadge('py', false, 'Error');
+                }
+            } catch (e) {
+                setBadge('py', false, 'Offline');
+            }
+        }
+
+        function setBadge(type, isOk, text) {
+            const dot = document.getElementById(`badge-${type}-dot`);
+            const txt = document.getElementById(`badge-${type}-text`);
+            if (!dot || !txt) return;
+
+            if (isOk) {
+                dot.className = "w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]";
+                txt.className = "text-emerald-400 font-semibold";
+                txt.innerText = text;
+            } else {
+                dot.className = "w-2 h-2 rounded-full bg-rose-500 animate-pulse";
+                txt.className = "text-rose-400 font-semibold";
+                txt.innerText = text;
+            }
+        }
+
+        // 2. Fetch Rankings from Python API
+        async function fetchRankings() {
+            try {
+                const res = await fetch(`${PYTHON_API_URL}/api/rankings`);
+                if (res.ok) {
+                    rankingsData = await res.json();
+                    renderRankings(rankingsData);
+                }
+            } catch (e) {
+                console.error("Failed to fetch rankings:", e);
+            }
+        }
+
+        function renderRankings(items) {
+            const container = document.getElementById('rankings-list');
+            const countBadge = document.getElementById('ranking-count');
+            countBadge.innerText = `${items.length} Videos`;
+
+            if (items.length === 0) {
+                container.innerHTML = `<div class="text-center text-xs text-slate-500 py-8 font-mono">No video rankings available.</div>`;
+                return;
+            }
+
+            container.innerHTML = items.map((item, idx) => {
+                const rankColor = item.rank === 1 ? 'bg-amber-500 text-slate-950 font-bold' :
+                                  item.rank === 2 ? 'bg-slate-300 text-slate-950 font-bold' :
+                                  item.rank === 3 ? 'bg-amber-700 text-white font-bold' : 'bg-slate-800 text-slate-400';
+
+                return `
+                    <div onclick="selectVideo('${item.id}')" class="group bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-cyber-accent rounded-xl p-3 cursor-pointer transition-all duration-200 shadow-sm flex space-x-3 items-start">
+                        <!-- Thumbnail & Rank Badge -->
+                        <div class="relative w-24 aspect-video rounded-lg overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800">
+                            <img src="${item.cover_url}" alt="${item.code}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-mono ${rankColor}">
+                                #${item.rank}
+                            </span>
+                            <span class="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-slate-950/80 text-[9px] font-mono text-slate-300">
+                                ${item.duration}
+                            </span>
+                        </div>
+
+                        <!-- Info -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-mono text-xs font-bold text-cyber-neon truncate">${item.code}</span>
+                                <span class="text-[10px] font-mono text-amber-400"><i class="fa-solid fa-star text-[9px] mr-0.5"></i>${item.rating}</span>
+                            </div>
+                            <h4 class="text-xs font-medium text-slate-200 group-hover:text-white line-clamp-2 leading-snug mb-1">${item.title}</h4>
+                            <div class="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                                <span>${item.actress}</span>
+                                <span class="text-slate-500"><i class="fa-solid fa-eye text-[9px] mr-1"></i>${(item.views/1000).toFixed(1)}k</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterRankings() {
+            const query = document.getElementById('ranking-search').value.toLowerCase();
+            const filtered = rankingsData.filter(item => 
+                item.code.toLowerCase().includes(query) ||
+                item.title.toLowerCase().includes(query) ||
+                item.actress.toLowerCase().includes(query)
+            );
+            renderRankings(filtered);
+        }
+
+        // 3. Video Selection & HLS Stream Player
+        function selectVideo(id) {
+            const item = rankingsData.find(v => v.id === id);
+            if (!item) return;
+
+            document.getElementById('player-code').innerText = item.code;
+            document.getElementById('player-title').innerText = item.title;
+
+            // Construct Proxied URL via Go Backend (Port 8080)
+            const proxiedUrl = `${GO_API_URL}/proxy/stream?url=${encodeURIComponent(item.stream_url)}`;
+            document.getElementById('stream-url-input').value = proxiedUrl;
+
+            loadHlsStream(proxiedUrl);
+            appendTerminalLog('SYSTEM', 'SUCCESS', `Loaded ranking item [${item.code}]. Proxy URL generated: ${proxiedUrl}`);
+        }
+
+        function playCustomProxyStream() {
+            let inputUrl = document.getElementById('stream-url-input').value.trim();
+            if (!inputUrl) return;
+
+            // If user pasted a direct URL without proxy prefix, automatically wrap with proxy
+            if (!inputUrl.startsWith(GO_API_URL)) {
+                inputUrl = `${GO_API_URL}/proxy/stream?url=${encodeURIComponent(inputUrl)}`;
+                document.getElementById('stream-url-input').value = inputUrl;
+            }
+
+            document.getElementById('player-code').innerText = 'CUSTOM';
+            document.getElementById('player-title').innerText = 'Custom Stream Playlist';
+            loadHlsStream(inputUrl);
+            appendTerminalLog('USER', 'INFO', `Triggered custom stream play via Go Proxy: ${inputUrl}`);
+        }
+
+        function loadHlsStream(url) {
+            const video = document.getElementById('hls-video');
+            const placeholder = document.getElementById('video-placeholder');
+
+            placeholder.classList.add('hidden');
+            video.classList.remove('hidden');
+
+            if (Hls.isSupported()) {
+                if (hlsPlayer) {
+                    hlsPlayer.destroy();
+                }
+                hlsPlayer = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: true
+                });
+                hlsPlayer.loadSource(url);
+                hlsPlayer.attachMedia(video);
+                hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
+                    video.play().catch(e => console.log("Autoplay blocked:", e));
+                });
+                hlsPlayer.on(Hls.Events.ERROR, (event, data) => {
+                    if (data.fatal) {
+                        appendTerminalLog('PLAYER', 'WARNING', `HLS Fatal error: ${data.type} - ${data.details}`);
+                    }
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = url;
+                video.play();
+            }
+        }
+
+        // 4. WebSocket Terminal Logic
+        function initWebSocket() {
+            try {
+                wsConn = new WebSocket(WS_URL);
+
+                wsConn.onopen = () => {
+                    const wsDot = document.getElementById('badge-ws-dot');
+                    const wsTxt = document.getElementById('badge-ws-text');
+                    const wsInd = document.getElementById('terminal-ws-indicator');
+
+                    wsDot.className = "w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]";
+                    wsTxt.className = "text-emerald-400 font-semibold";
+                    wsTxt.innerText = "Connected";
+                    wsInd.className = "text-emerald-400 font-semibold";
+                    wsInd.innerText = "● WS Connected";
+
+                    appendTerminalLog('WS_GATEWAY', 'SUCCESS', 'Established active WebSocket stream with Go Backend Gateway.');
+                };
+
+                wsConn.onmessage = (event) => {
+                    try {
+                        const payload = JSON.parse(event.data);
+                        appendTerminalLog(payload.source || 'AGENT', payload.level || 'INFO', payload.message, payload.data, payload.timestamp);
+                    } catch (e) {
+                        appendTerminalLog('WS_RAW', 'INFO', event.data);
+                    }
+                };
+
+                wsConn.onclose = () => {
+                    const wsDot = document.getElementById('badge-ws-dot');
+                    const wsTxt = document.getElementById('badge-ws-text');
+                    const wsInd = document.getElementById('terminal-ws-indicator');
+
+                    wsDot.className = "w-2 h-2 rounded-full bg-rose-500 animate-pulse";
+                    wsTxt.className = "text-rose-400 font-semibold";
+                    wsTxt.innerText = "Disconnected";
+                    wsInd.className = "text-rose-400 font-semibold";
+                    wsInd.innerText = "● WS Disconnected";
+
+                    // Auto-reconnect after 3 seconds
+                    setTimeout(initWebSocket, 3000);
+                };
+
+                wsConn.onerror = (err) => {
+                    console.error("WS error:", err);
+                };
+
+            } catch (e) {
+                console.error("WS Init Error:", e);
+            }
+        }
+
+        function appendTerminalLog(source, level, message, data = null, timestamp = null) {
+            totalLogCount++;
+            document.getElementById('log-count').innerText = totalLogCount;
+
+            const timeStr = timestamp || new Date().toLocaleTimeString() + '.' + String(Math.floor(Date.now() % 1000)).padStart(3, '0');
+            const levelColor = level === 'SUCCESS' ? 'text-emerald-400 font-bold' :
+                               level === 'WARNING' ? 'text-amber-400 font-bold' :
+                               level === 'ERROR' ? 'text-rose-400 font-bold' : 'text-cyber-neon font-bold';
+
+            const logEl = document.createElement('div');
+            logEl.className = `terminal-line flex flex-col space-y-1 font-mono text-xs border-b border-slate-900/60 pb-1.5 log-item-${level}`;
+
+            let dataHtml = '';
+            if (data) {
+                dataHtml = `<pre class="mt-1 p-2 rounded bg-slate-900 text-[10px] text-slate-300 font-mono overflow-x-auto border border-slate-800">${JSON.stringify(data, null, 2)}</pre>`;
+            }
+
+            logEl.innerHTML = `
+                <div class="flex items-start space-x-2">
+                    <span class="text-slate-500 select-none flex-shrink-0">${timeStr}</span>
+                    <span class="text-slate-400 font-semibold select-none flex-shrink-0">[${source}]</span>
+                    <span class="${levelColor} flex-shrink-0">[${level}]</span>
+                    <span class="text-slate-200 flex-1 leading-relaxed break-all">${message}</span>
+                </div>
+                ${dataHtml}
+            `;
+
+            const terminalBody = document.getElementById('terminal-body');
+            terminalBody.appendChild(logEl);
+
+            // Auto-scroll logic
+            if (document.getElementById('autoscroll-toggle').checked) {
+                terminalBody.scrollTop = terminalBody.scrollHeight;
+            }
+        }
+
+        function clearTerminal() {
+            document.getElementById('terminal-body').innerHTML = '<div class="terminal-line text-slate-500 italic">[SYSTEM] Terminal cleared by user.</div>';
+            totalLogCount = 0;
+            document.getElementById('log-count').innerText = '0';
+        }
+
+        function filterLogs(level) {
+            currentFilter = level;
+            document.querySelectorAll('.log-filter-btn').forEach(btn => {
+                if (btn.dataset.level === level) {
+                    btn.className = "log-filter-btn px-2 py-0.5 rounded bg-cyber-accent text-white font-semibold";
+                } else {
+                    btn.className = "log-filter-btn px-2 py-0.5 rounded bg-slate-800 text-slate-400 hover:text-slate-200";
+                }
+            });
+
+            // Re-filter terminal output DOM
+            const items = document.querySelectorAll('#terminal-body > div');
+            items.forEach(el => {
+                if (level === 'ALL') {
+                    el.style.display = 'flex';
+                } else if (level === 'CRAWLER') {
+                    el.innerText.includes('CRAWLER') || el.innerText.includes('PARSER') ? el.style.display = 'flex' : el.style.display = 'none';
+                } else {
+                    el.classList.contains(`log-item-${level}`) ? el.style.display = 'flex' : el.style.display = 'none';
+                }
+            });
+        }
+
+        // 5. Trigger Crawl Action
+        async function triggerCrawlSession() {
+            try {
+                const res = await fetch(`${PYTHON_API_URL}/api/crawl/trigger`, { method: 'POST' });
+                if (res.ok) {
+                    appendTerminalLog('FRONTEND', 'SUCCESS', 'Manual crawl request sent to Python Agent.');
+                    setTimeout(fetchRankings, 1000);
+                }
+            } catch (e) {
+                appendTerminalLog('FRONTEND', 'ERROR', `Failed to trigger crawl session: ${e}`);
+            }
+        }
+    </script>
+</body>
+</html>
