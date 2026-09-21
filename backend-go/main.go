@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -231,11 +232,35 @@ func main() {
 				bodyBytes, readErr := io.ReadAll(resp.Body)
 				if readErr == nil {
 					scanner := bufio.NewScanner(bytes.NewReader(bodyBytes))
+					uriRegex := regexp.MustCompile(`URI="([^"]+)"`)
 					var rewrittenLines []string
 					for scanner.Scan() {
 						line := scanner.Text()
 						trimmed := strings.TrimSpace(line)
-						if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+						if trimmed == "" {
+							rewrittenLines = append(rewrittenLines, line)
+							continue
+						}
+
+						// Handle tags that might contain sub-URIs (like #EXT-X-KEY or #EXT-X-MAP)
+						if strings.HasPrefix(trimmed, "#") {
+							if strings.Contains(trimmed, `URI="`) {
+								line = uriRegex.ReplaceAllStringFunc(line, func(match string) string {
+									submatches := uriRegex.FindStringSubmatch(match)
+									if len(submatches) > 1 {
+										uriVal := submatches[1]
+										resolved := uriVal
+										if !strings.HasPrefix(uriVal, "http://") && !strings.HasPrefix(uriVal, "https://") {
+											rel, relErr := url.Parse(uriVal)
+											if relErr == nil {
+												resolved = parsedBase.ResolveReference(rel).String()
+											}
+										}
+										return fmt.Sprintf(`URI="/proxy/stream?url=%s&referer=%s"`, url.QueryEscape(resolved), url.QueryEscape(customReferer))
+									}
+									return match
+								})
+							}
 							rewrittenLines = append(rewrittenLines, line)
 							continue
 						}
