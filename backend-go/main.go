@@ -1,11 +1,16 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -171,7 +176,7 @@ func main() {
 	})
 
 	// 3. Stream Proxy Endpoint (/proxy/stream?url=...)
-	r.GET("/proxy/stream", func(c *gin.Context) {
+	proxyHandler := func(c *gin.Context) {
 		targetURL := c.Query("url")
 		if targetURL == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing 'url' query parameter"})
@@ -184,9 +189,14 @@ func main() {
 			return
 		}
 
-		// Spoof headers to bypass MissAV anti-leech and referer checks
-		req.Header.Set("Referer", "https://missav.com/")
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+		// Spoof headers to bypass MissAV anti-leech and referer checks (missav.ws / missav.com)
+		customReferer := c.Query("referer")
+		if customReferer == "" {
+			customReferer = "https://missav.ws/"
+		}
+		req.Header.Set("Referer", customReferer)
+		req.Header.Set("Origin", "https://missav.ws/")
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
 		req.Header.Set("Accept", "*/*")
 		req.Header.Set("Accept-Language", "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7")
 
@@ -207,10 +217,53 @@ func main() {
 		defer resp.Body.Close()
 
 		// Copy upstream response headers
-		if contentType := resp.Header.Get("Content-Type"); contentType != "" {
-			c.Writer.Header().Set("Content-Type", contentType)
-		} else {
-			c.Writer.Header().Set("Content-Type", "application/x-mpegURL")
+		contentType := resp.Header.Get("Content-Type")
+		if contentType == "" {
+			contentType = "application/x-mpegURL"
+		}
+		c.Writer.Header().Set("Content-Type", contentType)
+
+		// Check if response is an m3u8 playlist; if so, rewrite relative & absolute segment links to stay proxied
+		isM3U8 := strings.Contains(strings.ToLower(contentType), "mpegurl") || strings.HasSuffix(strings.Split(targetURL, "?")[0], ".m3u8")
+		if isM3U8 {
+			parsedBase, err := url.Parse(targetURL)
+			if err == nil {
+				bodyBytes, readErr := io.ReadAll(resp.Body)
+				if readErr == nil {
+					scanner := bufio.NewScanner(bytes.NewReader(bodyBytes))
+					var rewrittenLines []string
+					for scanner.Scan() {
+						line := scanner.Text()
+						trimmed := strings.TrimSpace(line)
+						if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+							rewrittenLines = append(rewrittenLines, line)
+							continue
+						}
+
+						// Resolve relative URL against playlist base URL
+						resolvedURL := trimmed
+						if !strings.HasPrefix(trimmed, "http://") && !strings.HasPrefix(trimmed, "https://") {
+							rel, relErr := url.Parse(trimmed)
+							if relErr == nil {
+								resolvedURL = parsedBase.ResolveReference(rel).String()
+							}
+						}
+
+						// Rewrite to go through our proxy with spoofed referer
+						proxiedLine := fmt.Sprintf("/proxy/stream?url=%s&referer=%s", url.QueryEscape(resolvedURL), url.QueryEscape(customReferer))
+						rewrittenLines = append(rewrittenLines, proxiedLine)
+					}
+
+					rewrittenOutput := strings.Join(rewrittenLines, "\n")
+					c.Writer.Header().Set("Content-Type", "application/vnd.apple.mpegurl")
+					c.Writer.Header().Set("Content-Length", strconv.Itoa(len(rewrittenOutput)))
+					c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+					c.Writer.Header().Set("Access-Control-Allow-Headers", "*")
+					c.Writer.WriteHeader(resp.StatusCode)
+					c.Writer.Write([]byte(rewrittenOutput))
+					return
+				}
+			}
 		}
 
 		if contentLength := resp.Header.Get("Content-Length"); contentLength != "" {
@@ -230,7 +283,10 @@ func main() {
 
 		// Stream content directly to writer
 		_, _ = io.Copy(c.Writer, resp.Body)
-	})
+	}
+
+	r.GET("/proxy/stream", proxyHandler)
+	r.HEAD("/proxy/stream", proxyHandler)
 
 	// Health Check Route
 	r.GET("/health", func(c *gin.Context) {

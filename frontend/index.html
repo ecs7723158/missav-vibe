@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MISSAV VIBE - 免廣告串流優化與 Vibe Agent 監控系統</title>
+    <title>MISSAV.WS - 免廣告高畫質串流優化與 Vibe 監控系統</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- HLS.js for Streaming -->
+    <!-- HLS.js for Adaptive Bitrate Streaming -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -22,19 +22,20 @@
             theme: {
                 extend: {
                     colors: {
-                        cyber: {
-                            bg: '#0a0d14',
-                            card: '#121722',
-                            border: '#1e293b',
-                            accent: '#6366f1',
-                            neon: '#06b6d4',
-                            emerald: '#10b981',
-                            amber: '#f59e0b',
-                            rose: '#f43f5e'
+                        missav: {
+                            dark: '#0e121a',
+                            card: '#151b26',
+                            hover: '#1c2433',
+                            border: '#232d3f',
+                            primary: '#8b5cf6',
+                            accent: '#ec4899',
+                            cyan: '#06b6d4',
+                            gold: '#f59e0b',
+                            green: '#10b981'
                         }
                     },
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
                         mono: ['Fira Code', 'monospace']
                     }
                 }
@@ -42,564 +43,1084 @@
         }
     </script>
     <style>
-        /* Custom Scrollbar for Terminal and Sidebar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0a0d14;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #1e293b;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #334155;
-        }
-        
-        .glass-panel {
-            background: rgba(18, 23, 34, 0.75);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0e121a; }
+        ::-webkit-scrollbar-thumb { background: #232d3f; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #374151; }
 
-        .glow-accent {
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.25);
+        .glass-header {
+            background: rgba(14, 18, 26, 0.88);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
         }
-
-        .terminal-line {
-            animation: fadeIn 0.2s ease-in-out;
+        .card-shadow {
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
+        .glow-hover:hover {
+            box-shadow: 0 0 25px -5px rgba(139, 92, 246, 0.35);
+        }
+        .badge-gradient {
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+        }
+        .cinema-backdrop {
+            background: rgba(10, 12, 18, 0.94);
+            backdrop-filter: blur(20px);
         }
     </style>
 </head>
-<body class="bg-cyber-bg text-slate-100 font-sans antialiased min-h-screen flex flex-col overflow-x-hidden selection:bg-cyber-accent selection:text-white">
+<body class="bg-missav-dark text-slate-100 font-sans antialiased min-h-screen flex flex-col selection:bg-missav-primary selection:text-white">
 
-    <!-- Top Navigation Header -->
-    <header class="glass-panel sticky top-0 z-50 border-b border-cyber-border px-6 py-3 flex items-center justify-between">
-        <!-- Logo & Title -->
-        <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyber-accent to-cyber-neon flex items-center justify-center shadow-lg glow-accent">
-                <i class="fa-solid fa-play text-white text-lg"></i>
-            </div>
-            <div>
-                <div class="flex items-center space-x-2">
-                    <h1 class="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">MISSAV VIBE</h1>
-                    <span class="text-xs px-2 py-0.5 rounded-full bg-cyber-accent/20 text-cyber-accent font-mono font-medium border border-cyber-accent/30">v1.0 Stream Optimizer</span>
+    <!-- Top Sticky Navigation Bar -->
+    <header class="glass-header sticky top-0 z-40 px-4 lg:px-8 py-3 transition-all">
+        <div class="max-w-[1920px] mx-auto flex items-center justify-between gap-4">
+            
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchCategory('all')">
+                <div class="w-10 h-10 rounded-xl badge-gradient flex items-center justify-center shadow-lg shadow-purple-500/20">
+                    <i class="fa-solid fa-play text-white text-base"></i>
                 </div>
-                <p class="text-xs text-slate-400 font-mono">Ad-Free HLS Proxy & Real-Time Agent Control System</p>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-400">MISSAV<span class="text-missav-cyan">.WS</span></span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-missav-primary/20 text-missav-primary border border-missav-primary/30 font-mono font-semibold">VIBE v2.0</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 hidden sm:block font-mono">No Ads · Referer Bypass · Interactive HLS Hub</p>
+                </div>
+            </div>
+
+            <!-- Instant Search Bar -->
+            <div class="flex-1 max-w-xl relative">
+                <i class="fa-solid fa-search absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                <input type="text" id="global-search" oninput="handleSearchInput()" placeholder="搜尋番號 (如 IPX-888)、女優、標籤或關鍵字..." class="w-full bg-missav-card border border-missav-border rounded-xl pl-9 pr-9 py-2 text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:border-missav-primary focus:ring-1 focus:ring-missav-primary transition-all font-mono">
+                <button id="search-clear-btn" onclick="clearSearch()" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 text-xs">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Right Controls: View Switch, Terminal Toggle & Service Indicators -->
+            <div class="flex items-center space-x-3">
+                <!-- View Mode Toggle -->
+                <div class="hidden sm:flex items-center bg-missav-card p-1 rounded-xl border border-missav-border text-xs">
+                    <button id="btn-view-grid" onclick="setViewMode('grid')" class="px-2.5 py-1 rounded-lg bg-missav-primary text-white font-semibold transition-all">
+                        <i class="fa-solid fa-border-all"></i>
+                    </button>
+                    <button id="btn-view-list" onclick="setViewMode('list')" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+                        <i class="fa-solid fa-list"></i>
+                    </button>
+                </div>
+
+                <!-- Vibe Terminal Drawer Toggle -->
+                <button onclick="toggleTerminalDrawer()" class="relative flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-missav-card hover:bg-missav-hover border border-missav-border text-xs font-mono transition-all">
+                    <i class="fa-solid fa-terminal text-missav-cyan"></i>
+                    <span class="hidden md:inline text-slate-300">Vibe Agent</span>
+                    <span id="nav-log-badge" class="w-2 h-2 rounded-full bg-missav-green animate-pulse"></span>
+                </button>
+
+                <!-- Trigger Crawl Button -->
+                <button onclick="triggerManualCrawl()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl badge-gradient text-white text-xs font-semibold shadow-md active:scale-95 transition-all">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span class="hidden md:inline">爬取同步</span>
+                </button>
             </div>
         </div>
 
-        <!-- System Health Badges & Controls -->
-        <div class="flex items-center space-x-4">
-            <!-- Go Proxy Status -->
-            <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono">
-                <span id="badge-go-dot" class="w-2 h-2 rounded-full bg-slate-500 animate-pulse"></span>
-                <span class="text-slate-400">Go Proxy (8080):</span>
-                <span id="badge-go-text" class="text-slate-300 font-semibold">Checking...</span>
-            </div>
-
-            <!-- Python Agent Status -->
-            <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono">
-                <span id="badge-py-dot" class="w-2 h-2 rounded-full bg-slate-500 animate-pulse"></span>
-                <span class="text-slate-400">Python Brain (8000):</span>
-                <span id="badge-py-text" class="text-slate-300 font-semibold">Checking...</span>
-            </div>
-
-            <!-- WS Connection Status -->
-            <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono">
-                <span id="badge-ws-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-                <span class="text-slate-400">WS Gateway:</span>
-                <span id="badge-ws-text" class="text-slate-300 font-semibold">Disconnected</span>
-            </div>
-
-            <!-- Trigger Crawl Button -->
-            <button id="btn-trigger-crawl" onclick="triggerCrawlSession()" class="flex items-center space-x-2 px-3.5 py-1.5 rounded-lg bg-cyber-accent hover:bg-cyber-accent/80 text-white text-xs font-semibold transition-all shadow-md active:scale-95">
-                <i class="fa-solid fa-bolt"></i>
-                <span>Trigger Agent Crawl</span>
+        <!-- Navigation Tabs Bar -->
+        <nav class="max-w-[1920px] mx-auto mt-3 pt-2 border-t border-missav-border/60 flex items-center space-x-1 sm:space-x-2 overflow-x-auto text-xs font-medium no-scrollbar">
+            <button onclick="switchCategory('all')" class="nav-tab px-3.5 py-1.5 rounded-lg bg-missav-primary text-white whitespace-nowrap transition-all" data-cat="all">
+                <i class="fa-solid fa-film mr-1.5"></i>全部影片
             </button>
-        </div>
+            <button onclick="switchCategory('recent')" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-missav-card whitespace-nowrap transition-all" data-cat="recent">
+                <i class="fa-solid fa-clock mr-1.5 text-missav-cyan"></i>最近更新
+            </button>
+            <button onclick="switchCategory('trending')" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-missav-card whitespace-nowrap transition-all" data-cat="trending">
+                <i class="fa-solid fa-fire mr-1.5 text-missav-accent"></i>熱門發行
+            </button>
+            <button onclick="switchCategory('chinese-subtitle')" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-missav-card whitespace-nowrap transition-all" data-cat="chinese-subtitle">
+                <i class="fa-solid fa-closed-captioning mr-1.5 text-missav-gold"></i>中文字幕
+            </button>
+            <button onclick="switchCategory('uncensored')" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-missav-card whitespace-nowrap transition-all" data-cat="uncensored">
+                <i class="fa-solid fa-gem mr-1.5 text-purple-400"></i>無修正流出
+            </button>
+            <button onclick="switchCategory('actresses')" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-missav-card whitespace-nowrap transition-all" data-cat="actresses">
+                <i class="fa-solid fa-person-dress mr-1.5 text-pink-400"></i>熱門女優
+            </button>
+            <button onclick="switchCategory('tags')" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-missav-card whitespace-nowrap transition-all" data-cat="tags">
+                <i class="fa-solid fa-tags mr-1.5 text-indigo-400"></i>分類標籤
+            </button>
+            <button onclick="switchCategory('favorites')" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-missav-card whitespace-nowrap transition-all" data-cat="favorites">
+                <i class="fa-solid fa-heart mr-1.5 text-rose-500"></i>我的收藏 (<span id="fav-counter">0</span>)
+            </button>
+            <button onclick="switchCategory('paths')" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-missav-card whitespace-nowrap transition-all" data-cat="paths">
+                <i class="fa-solid fa-network-wired mr-1.5 text-emerald-400"></i>📋 影音路徑與 MissAV 對照表
+            </button>
+        </nav>
     </header>
 
-    <!-- Main Workspace Layout Grid -->
-    <div class="flex-1 grid grid-cols-12 gap-4 p-4 max-w-[1920px] mx-auto w-full h-[calc(100vh-65px)]">
-
-        <!-- Left Sidebar: Virtual Ranking List (Col 3) -->
-        <aside class="col-span-12 lg:col-span-3 glass-panel rounded-2xl flex flex-col overflow-hidden border border-cyber-border">
-            <div class="p-4 border-b border-cyber-border flex items-center justify-between bg-slate-900/40">
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-fire text-amber-400"></i>
-                    <h2 class="font-bold text-sm text-slate-200">Virtual Ranking Matrix</h2>
-                </div>
-                <span id="ranking-count" class="text-xs bg-slate-800 text-slate-400 font-mono px-2 py-0.5 rounded-md">0 Videos</span>
-            </div>
-
-            <!-- Search / Filter Box -->
-            <div class="p-3 border-b border-cyber-border/50 bg-slate-950/30">
-                <div class="relative">
-                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-xs text-slate-500"></i>
-                    <input type="text" id="ranking-search" placeholder="Filter code, actress, title..." onkeyup="filterRankings()" class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyber-accent transition-colors font-mono">
-                </div>
-            </div>
-
-            <!-- Rankings Container -->
-            <div id="rankings-list" class="flex-1 overflow-y-auto p-3 space-y-3">
-                <!-- Loading State -->
-                <div class="flex flex-col items-center justify-center h-48 text-slate-500 space-y-2">
-                    <i class="fa-solid fa-circle-notch fa-spin text-xl text-cyber-accent"></i>
-                    <p class="text-xs font-mono">Fetching rankings from Python Agent...</p>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Center Section: Media Player & Stream Proxy Controls (Col 5) -->
-        <main class="col-span-12 lg:col-span-5 flex flex-col space-y-4">
+    <!-- Sub-Filter Bar (Tags & Sort) -->
+    <div id="sub-filter-bar" class="bg-missav-card/60 border-b border-missav-border px-4 lg:px-8 py-2.5">
+        <div class="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
             
-            <!-- Video Player Card -->
-            <div class="glass-panel rounded-2xl p-4 flex flex-col border border-cyber-border space-y-3">
-                <!-- Player Header -->
-                <div class="flex items-center justify-between border-b border-cyber-border pb-3">
-                    <div class="flex items-center space-x-2 overflow-hidden">
-                        <span id="player-code" class="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-cyber-accent/20 text-cyber-accent border border-cyber-accent/30">SELECT VIDEO</span>
-                        <h3 id="player-title" class="text-sm font-semibold text-slate-200 truncate max-w-xs">Click any item from rankings to load stream</h3>
-                    </div>
-                    <div class="flex items-center space-x-2 flex-shrink-0">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            <i class="fa-solid fa-shield-halved mr-1"></i> AD-FREE SHIELD
-                        </span>
-                    </div>
+            <!-- Quick Tag Pills -->
+            <div class="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5" id="quick-tags-container">
+                <span class="text-slate-400 font-mono mr-1">標籤:</span>
+                <button onclick="selectFilterTag('all')" class="tag-pill px-2.5 py-1 rounded-md bg-missav-primary/20 text-missav-primary border border-missav-primary/30 font-medium whitespace-nowrap" data-tag="all">全部</button>
+                <button onclick="selectFilterTag('4K')" class="tag-pill px-2.5 py-1 rounded-md bg-missav-card text-slate-400 hover:text-white border border-missav-border whitespace-nowrap" data-tag="4K">4K</button>
+                <button onclick="selectFilterTag('無修正')" class="tag-pill px-2.5 py-1 rounded-md bg-missav-card text-slate-400 hover:text-white border border-missav-border whitespace-nowrap" data-tag="無修正">無修正</button>
+                <button onclick="selectFilterTag('中文字幕')" class="tag-pill px-2.5 py-1 rounded-md bg-missav-card text-slate-400 hover:text-white border border-missav-border whitespace-nowrap" data-tag="中文字幕">中文字幕</button>
+                <button onclick="selectFilterTag('同棲')" class="tag-pill px-2.5 py-1 rounded-md bg-missav-card text-slate-400 hover:text-white border border-missav-border whitespace-nowrap" data-tag="同棲">同棲</button>
+                <button onclick="selectFilterTag('OL')" class="tag-pill px-2.5 py-1 rounded-md bg-missav-card text-slate-400 hover:text-white border border-missav-border whitespace-nowrap" data-tag="OL">OL</button>
+                <button onclick="selectFilterTag('素人')" class="tag-pill px-2.5 py-1 rounded-md bg-missav-card text-slate-400 hover:text-white border border-missav-border whitespace-nowrap" data-tag="素人">素人</button>
+                <button onclick="selectFilterTag('獨家')" class="tag-pill px-2.5 py-1 rounded-md bg-missav-card text-slate-400 hover:text-white border border-missav-border whitespace-nowrap" data-tag="獨家">獨家</button>
+            </div>
+
+            <!-- Sort Dropdown & Status Badges -->
+            <div class="flex items-center space-x-3 ml-auto">
+                <div class="flex items-center space-x-1.5 text-slate-400 font-mono">
+                    <span>排序:</span>
+                    <select id="sort-select" onchange="applySorting()" class="bg-missav-card border border-missav-border text-slate-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-missav-primary">
+                        <option value="heat">🔥 熱度評分</option>
+                        <option value="views">👁️ 點閱次數</option>
+                        <option value="rating">⭐ 網友評分</option>
+                        <option value="new">🆕 最新發行</option>
+                    </select>
                 </div>
 
-                <!-- Video Frame Window -->
-                <div class="relative w-full aspect-video bg-slate-950 rounded-xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center group">
-                    <video id="hls-video" controls class="w-full h-full object-contain hidden"></video>
-
-                    <!-- Placeholder Screen -->
-                    <div id="video-placeholder" class="flex flex-col items-center justify-center p-6 text-center space-y-3">
-                        <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-cyber-neon text-2xl group-hover:scale-110 transition-transform">
-                            <i class="fa-solid fa-clapperboard"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-semibold text-slate-300">No Active Stream Loaded</p>
-                            <p class="text-xs text-slate-500 max-w-sm mt-1">Select a video from the virtual ranking matrix on the left or paste a custom m3u8 URL below.</p>
-                        </div>
-                    </div>
+                <!-- Stream Proxy Mode Indicator -->
+                <div class="hidden md:flex items-center space-x-1.5 text-[11px] font-mono px-2 py-0.5 rounded-md bg-missav-green/10 text-missav-green border border-missav-green/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-missav-green animate-pulse"></span>
+                    <span>Go Proxy 8080 Active</span>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <!-- Custom Stream Proxy Input Bar -->
-                <div class="bg-slate-900/90 rounded-xl p-3 border border-slate-800 space-y-2">
-                    <label class="text-[11px] font-mono font-semibold text-slate-400 flex items-center justify-between">
-                        <span><i class="fa-solid fa-link text-cyber-neon mr-1"></i> TARGET M3U8 STREAM URL</span>
-                        <span class="text-slate-500 text-[10px]">Spoofing Referer: missav.com</span>
-                    </label>
-                    <div class="flex space-x-2">
-                        <input type="text" id="stream-url-input" placeholder="https://.../playlist.m3u8" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyber-accent">
-                        <button onclick="playCustomProxyStream()" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold font-mono transition-colors shadow flex items-center space-x-1">
-                            <i class="fa-solid fa-play text-[10px]"></i>
-                            <span>Proxy Play</span>
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-[1920px] w-full mx-auto p-4 lg:p-8 space-y-6">
+        
+        <!-- Results Header Bar -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <h2 id="section-title" class="text-lg font-bold text-slate-100 flex items-center">
+                    <span id="section-title-text">全部影片列表</span>
+                </h2>
+                <span id="results-count" class="text-xs font-mono px-2 py-0.5 rounded-md bg-missav-card text-slate-400 border border-missav-border">0 部影片</span>
+            </div>
+
+            <!-- Active Filter Dismiss Pill (if filtered) -->
+            <div id="active-filter-badge" class="hidden items-center space-x-2 bg-missav-primary/20 text-missav-primary border border-missav-primary/30 px-3 py-1 rounded-full text-xs font-mono">
+                <span id="active-filter-label">Filter: IPX</span>
+                <button onclick="resetFilters()" class="hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+
+        <!-- Video Catalog Container (Grid / List) -->
+        <div id="video-catalog" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+            <!-- Loading Indicator -->
+            <div class="col-span-full py-24 flex flex-col items-center justify-center space-y-3 text-slate-400">
+                <i class="fa-solid fa-circle-notch fa-spin text-3xl text-missav-primary"></i>
+                <p class="text-xs font-mono">正在從 Python Agent 載入 MissAV.ws 影音庫...</p>
+            </div>
+        </div>
+
+        <!-- Actresses Section Container (Hidden by default) -->
+        <div id="actresses-catalog" class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5"></div>
+
+        <!-- Tags Cloud Section Container (Hidden by default) -->
+        <div id="tags-catalog" class="hidden flex flex-wrap gap-3 p-6 bg-missav-card rounded-2xl border border-missav-border"></div>
+
+        <!-- Video Paths Directory Section Container (Hidden by default) -->
+        <div id="paths-catalog" class="hidden flex flex-col space-y-4"></div>
+    </main>
+
+    <!-- Cinema Mode Player Modal (劇院播放模式視窗) -->
+    <div id="cinema-modal" class="hidden fixed inset-0 z-50 cinema-backdrop flex items-center justify-center p-2 sm:p-6 overflow-y-auto">
+        <div class="relative w-full max-w-6xl bg-missav-card border border-missav-border rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto">
+            
+            <!-- Cinema Header -->
+            <div class="px-5 py-3.5 bg-slate-950/80 border-b border-missav-border flex items-center justify-between">
+                <div class="flex items-center space-x-3 overflow-hidden">
+                    <span id="cinema-code" class="text-xs font-mono font-bold px-2.5 py-1 rounded bg-missav-primary text-white">CODE-000</span>
+                    <h3 id="cinema-title" class="text-sm font-semibold text-slate-200 truncate max-w-lg">影片播放器</h3>
+                </div>
+                <div class="flex items-center space-x-2.5 flex-shrink-0">
+                    <!-- MissAV Direct Link Button -->
+                    <a id="cinema-missav-btn" href="#" target="_blank" class="px-3 py-1 rounded-lg bg-pink-600/20 text-pink-300 hover:bg-pink-600 hover:text-white border border-pink-500/30 text-xs font-mono transition-all flex items-center space-x-1.5 shadow">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                        <span>MissAV 原站觀看</span>
+                    </a>
+                    <!-- Favorite Toggle in Player -->
+                    <button id="cinema-fav-btn" onclick="toggleCinemaFavorite()" class="px-2.5 py-1 rounded-lg bg-missav-border text-slate-300 hover:text-rose-400 text-xs font-mono transition-colors">
+                        <i class="fa-regular fa-heart mr-1"></i>收藏
+                    </button>
+                    <!-- Close Button -->
+                    <button onclick="closeCinemaMode()" class="w-8 h-8 rounded-lg bg-missav-border hover:bg-rose-600 text-slate-300 hover:text-white flex items-center justify-center transition-colors">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cinema Video Stage -->
+            <div class="relative w-full aspect-video bg-black flex items-center justify-center">
+                <video id="cinema-video" controls class="w-full h-full object-contain"></video>
+            </div>
+
+            <!-- Player Toolbar & Info -->
+            <div class="p-5 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-missav-border pb-4">
+                    <div class="flex items-center space-x-4 text-xs font-mono text-slate-400">
+                        <span>女優: <strong id="cinema-actress" class="text-missav-cyan cursor-pointer hover:underline" onclick="filterByActress(this.innerText)">--</strong></span>
+                        <span>發行: <span id="cinema-date">--</span></span>
+                        <span>評分: <span id="cinema-rating" class="text-missav-gold font-bold">--</span></span>
+                        <span>點閱: <span id="cinema-views">--</span></span>
+                    </div>
+
+                    <!-- Stream Proxy Controls -->
+                    <div class="flex items-center space-x-2 text-xs font-mono">
+                        <label class="flex items-center space-x-1.5 cursor-pointer bg-slate-900 px-3 py-1.5 rounded-lg border border-missav-border">
+                            <input type="checkbox" id="cinema-proxy-toggle" checked onchange="toggleProxyPlayback()" class="rounded text-missav-primary focus:ring-0">
+                            <span class="text-slate-300">經由 Go Proxy (8080) 防盜鏈代理</span>
+                        </label>
+                        <button onclick="copyCurrentM3u8()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center space-x-1">
+                            <i class="fa-solid fa-copy text-[11px]"></i>
+                            <span>複製 M3U8</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Stream Metadata Badges -->
-                <div class="grid grid-cols-3 gap-2 text-center text-xs font-mono pt-1">
-                    <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800/80">
-                        <span class="text-slate-500 block text-[10px]">PROXY HEADER</span>
-                        <span class="text-emerald-400 font-semibold text-[11px]">SPOOFED OK</span>
+                <!-- Video Path & Source Mapping Info Box -->
+                <div class="p-3 bg-slate-950/90 rounded-xl border border-missav-border text-xs font-mono space-y-2">
+                    <div class="flex items-center justify-between text-slate-400 font-bold border-b border-slate-900 pb-1.5">
+                        <span class="text-missav-cyan"><i class="fa-solid fa-network-wired mr-1.5"></i>影音來源與代理路徑 (Paths Mapping)</span>
+                        <span class="text-[10px] text-emerald-400">● 串流狀態: 支援正常播放</span>
                     </div>
-                    <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800/80">
-                        <span class="text-slate-500 block text-[10px]">PORT</span>
-                        <span class="text-cyber-neon font-semibold text-[11px]">Go :8080</span>
-                    </div>
-                    <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800/80">
-                        <span class="text-slate-500 block text-[10px]">LATENCY</span>
-                        <span id="stream-latency" class="text-amber-400 font-semibold text-[11px]">~ 24ms</span>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
+                        <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-500 block text-[10px]">原始 MissAV 頁面超連結</span>
+                            <div class="flex items-center justify-between gap-1 mt-0.5">
+                                <a id="cinema-path-missav" href="#" target="_blank" class="text-pink-400 hover:underline truncate">https://missav.ws/...</a>
+                                <button onclick="copyElementText('cinema-path-missav')" class="text-slate-400 hover:text-white flex-shrink-0" title="複製連結"><i class="fa-solid fa-copy"></i></button>
+                            </div>
+                        </div>
+                        <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-500 block text-[10px]">Go 串流代理路徑 (Port 8080)</span>
+                            <div class="flex items-center justify-between gap-1 mt-0.5">
+                                <span id="cinema-path-proxy" class="text-emerald-400 truncate">http://localhost:8080/proxy/stream?url=...</span>
+                                <button onclick="copyElementText('cinema-path-proxy')" class="text-slate-400 hover:text-white flex-shrink-0" title="複製路徑"><i class="fa-solid fa-copy"></i></button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </main>
 
-        <!-- Right / Bottom Panel: Real-Time Vibe Terminal (Col 4) -->
-        <section class="col-span-12 lg:col-span-4 glass-panel rounded-2xl flex flex-col overflow-hidden border border-cyber-border">
-            <!-- Terminal Header -->
-            <div class="p-3.5 border-b border-cyber-border bg-slate-950/80 flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <div class="flex space-x-1.5 mr-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
-                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-                    </div>
-                    <i class="fa-solid fa-terminal text-cyber-neon text-xs"></i>
-                    <h2 class="font-mono font-bold text-xs text-slate-200 tracking-wide">VIBE AGENT TERMINAL</h2>
-                </div>
+                <!-- Video Tags -->
+                <div id="cinema-tags" class="flex flex-wrap gap-1.5"></div>
 
-                <!-- Terminal Actions -->
-                <div class="flex items-center space-x-2">
-                    <button onclick="clearTerminal()" class="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded bg-slate-800/60 hover:bg-slate-800 transition-colors font-mono">
-                        <i class="fa-solid fa-trash-can mr-1"></i> Clear
-                    </button>
-                    <label class="flex items-center space-x-1 text-[11px] font-mono text-slate-400 cursor-pointer">
-                        <input type="checkbox" id="autoscroll-toggle" checked class="rounded bg-slate-900 border-slate-700 text-cyber-accent focus:ring-0">
-                        <span>Auto-scroll</span>
-                    </label>
+                <!-- Related Videos Section -->
+                <div class="pt-2">
+                    <h4 class="text-xs font-bold text-slate-300 mb-3 flex items-center">
+                        <i class="fa-solid fa-film text-missav-primary mr-1.5"></i>相關推薦影片
+                    </h4>
+                    <div id="cinema-related-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
                 </div>
             </div>
-
-            <!-- Terminal Filter Bar -->
-            <div class="px-3 py-2 border-b border-cyber-border/40 bg-slate-900/40 flex items-center space-x-2 overflow-x-auto text-[11px] font-mono">
-                <span class="text-slate-500">Filter:</span>
-                <button onclick="filterLogs('ALL')" class="log-filter-btn px-2 py-0.5 rounded bg-cyber-accent text-white font-semibold" data-level="ALL">ALL</button>
-                <button onclick="filterLogs('INFO')" class="log-filter-btn px-2 py-0.5 rounded bg-slate-800 text-slate-400 hover:text-slate-200" data-level="INFO">INFO</button>
-                <button onclick="filterLogs('SUCCESS')" class="log-filter-btn px-2 py-0.5 rounded bg-slate-800 text-slate-400 hover:text-slate-200" data-level="SUCCESS">SUCCESS</button>
-                <button onclick="filterLogs('CRAWLER')" class="log-filter-btn px-2 py-0.5 rounded bg-slate-800 text-slate-400 hover:text-slate-200" data-level="CRAWLER">CRAWLER</button>
-            </div>
-
-            <!-- Terminal Output Window -->
-            <div id="terminal-body" class="flex-1 bg-slate-950 p-4 font-mono text-xs overflow-y-auto space-y-2 selection:bg-slate-800">
-                <div class="terminal-line text-slate-500 italic">
-                    [SYSTEM] Terminal ready. Connecting to WebSocket gateway at ws://localhost:8080/ws/client...
-                </div>
-            </div>
-
-            <!-- Terminal Footer Status Bar -->
-            <div class="px-4 py-2 border-t border-cyber-border bg-slate-950/90 flex items-center justify-between text-[11px] font-mono text-slate-500">
-                <span>Received: <strong id="log-count" class="text-slate-300">0</strong> events</span>
-                <span id="terminal-ws-indicator" class="text-rose-400">● WS Disconnected</span>
-            </div>
-        </section>
-
+        </div>
     </div>
 
-    <!-- Frontend Application Logic Script -->
+    <!-- Slide-over Vibe Terminal Drawer (可折疊黑客風日誌面板) -->
+    <aside id="terminal-drawer" class="fixed right-0 top-0 bottom-0 w-full sm:w-[460px] z-50 bg-missav-card border-l border-missav-border shadow-2xl flex flex-col translate-x-full transition-transform duration-300">
+        <!-- Terminal Header -->
+        <div class="p-4 bg-slate-950 border-b border-missav-border flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="flex space-x-1.5 mr-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                </div>
+                <i class="fa-solid fa-terminal text-missav-cyan text-xs"></i>
+                <h3 class="font-mono font-bold text-xs text-slate-200">VIBE AGENT TERMINAL</h3>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="clearTerminalLogs()" class="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded bg-slate-800/80 font-mono">清空</button>
+                <button onclick="toggleTerminalDrawer()" class="text-slate-400 hover:text-slate-200 text-sm p-1"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+
+        <!-- Terminal Filter Options -->
+        <div class="px-4 py-2 bg-slate-900 border-b border-missav-border flex items-center justify-between text-[11px] font-mono">
+            <div class="flex items-center space-x-1.5">
+                <button onclick="setLogFilter('ALL')" class="log-pill px-2 py-0.5 rounded bg-missav-primary text-white" data-lvl="ALL">ALL</button>
+                <button onclick="setLogFilter('INFO')" class="log-pill px-2 py-0.5 rounded bg-slate-800 text-slate-400" data-lvl="INFO">INFO</button>
+                <button onclick="setLogFilter('SUCCESS')" class="log-pill px-2 py-0.5 rounded bg-slate-800 text-slate-400" data-lvl="SUCCESS">SUCCESS</button>
+            </div>
+            <label class="flex items-center space-x-1 text-slate-400 cursor-pointer">
+                <input type="checkbox" id="autoscroll-chk" checked class="rounded text-missav-primary focus:ring-0">
+                <span>自動滾動</span>
+            </label>
+        </div>
+
+        <!-- Terminal Log Output Area -->
+        <div id="terminal-logs-body" class="flex-1 p-4 bg-slate-950 font-mono text-xs overflow-y-auto space-y-2">
+            <div class="text-slate-500 italic">[SYSTEM] Initializing MissAV.ws Vibe WebSocket Bridge...</div>
+        </div>
+
+        <!-- Terminal Status Footer -->
+        <div class="px-4 py-2.5 bg-slate-950 border-t border-missav-border flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <span>事件接收: <strong id="total-log-events" class="text-slate-200">0</strong></span>
+            <span id="ws-indicator-pill" class="text-missav-green font-semibold">● WS 連線中</span>
+        </div>
+    </aside>
+
+    <!-- Global Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 border border-missav-primary text-slate-100 px-4 py-2.5 rounded-xl shadow-2xl text-xs font-mono flex items-center space-x-2">
+        <i class="fa-solid fa-check-circle text-missav-green"></i>
+        <span id="toast-text">Toast Message</span>
+    </div>
+
+    <!-- Application Controller Logic -->
     <script>
-        const GO_API_URL = 'http://localhost:8080';
-        const PYTHON_API_URL = 'http://localhost:8000';
+        const GO_API = 'http://localhost:8080';
+        const PY_API = 'http://localhost:8000';
         const WS_URL = 'ws://localhost:8080/ws/client';
 
-        let rankingsData = [];
-        let hlsPlayer = null;
-        let wsConn = null;
-        let totalLogCount = 0;
-        let currentFilter = 'ALL';
+        // State Machine
+        let currentCategory = 'all';
+        let currentTag = 'all';
+        let currentSearch = '';
+        let currentSort = 'heat';
+        let currentViewMode = 'grid';
+        let allVideos = [];
+        let allActresses = [];
+        let allTags = [];
+        let activeVideo = null;
+        let hlsInstance = null;
+        let wsClient = null;
+        let totalLogs = 0;
+        let logFilter = 'ALL';
 
-        // Initialize App on DOM Load
+        // LocalStorage Favorites
+        let favoritesList = JSON.parse(localStorage.getItem('missav_favorites') || '[]');
+
         document.addEventListener('DOMContentLoaded', () => {
-            checkServiceHealth();
-            fetchRankings();
-            initWebSocket();
-
-            // Periodic Health Check every 8 seconds
-            setInterval(checkServiceHealth, 8000);
+            updateFavoriteCounter();
+            loadVideos();
+            loadActresses();
+            loadTags();
+            initWebSocketConnection();
         });
 
-        // 1. Service Health Check
-        async function checkServiceHealth() {
-            // Check Go Proxy
+        // 1. Fetch & Render Video Catalog
+        async function loadVideos() {
             try {
-                const res = await fetch(`${GO_API_URL}/health`, { method: 'GET' });
-                if (res.ok) {
-                    setBadge('go', true, 'Online');
-                } else {
-                    setBadge('go', false, 'Error');
+                let url = `${PY_API}/api/videos?sort=${currentSort}`;
+                if (currentCategory !== 'all' && currentCategory !== 'favorites' && currentCategory !== 'actresses' && currentCategory !== 'tags') {
+                    url += `&category=${encodeURIComponent(currentCategory)}`;
                 }
-            } catch (e) {
-                setBadge('go', false, 'Offline');
-            }
+                if (currentTag !== 'all') {
+                    url += `&tag=${encodeURIComponent(currentTag)}`;
+                }
+                if (currentSearch.trim()) {
+                    url += `&search=${encodeURIComponent(currentSearch.trim())}`;
+                }
 
-            // Check Python Crawler
-            try {
-                const res = await fetch(`${PYTHON_API_URL}/api/status`, { method: 'GET' });
+                const res = await fetch(url);
                 if (res.ok) {
-                    setBadge('py', true, 'Online');
-                } else {
-                    setBadge('py', false, 'Error');
+                    const data = await res.json();
+                    allVideos = data.videos || [];
+                    
+                    if (currentCategory === 'favorites') {
+                        renderFavoritesView();
+                    } else if (currentCategory === 'actresses') {
+                        renderActressesView();
+                    } else if (currentCategory === 'tags') {
+                        renderTagsView();
+                    } else {
+                        renderVideoCards(allVideos);
+                    }
                 }
-            } catch (e) {
-                setBadge('py', false, 'Offline');
+            } catch (err) {
+                console.error("Failed to load videos:", err);
+                document.getElementById('video-catalog').innerHTML = `
+                    <div class="col-span-full py-16 text-center text-xs font-mono text-rose-400">
+                        <i class="fa-solid fa-triangle-exclamation text-2xl mb-2"></i>
+                        <p>無法連線至 Python 爬蟲服務 (Port 8000)。請確認服務是否已啟動。</p>
+                    </div>
+                `;
             }
         }
 
-        function setBadge(type, isOk, text) {
-            const dot = document.getElementById(`badge-${type}-dot`);
-            const txt = document.getElementById(`badge-${type}-text`);
-            if (!dot || !txt) return;
+        function renderVideoCards(videos) {
+            const container = document.getElementById('video-catalog');
+            const countEl = document.getElementById('results-count');
+            countEl.innerText = `${videos.length} 部影片`;
 
-            if (isOk) {
-                dot.className = "w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]";
-                txt.className = "text-emerald-400 font-semibold";
-                txt.innerText = text;
-            } else {
-                dot.className = "w-2 h-2 rounded-full bg-rose-500 animate-pulse";
-                txt.className = "text-rose-400 font-semibold";
-                txt.innerText = text;
-            }
-        }
+            // Toggle sections
+            document.getElementById('video-catalog').classList.remove('hidden');
+            document.getElementById('actresses-catalog').classList.add('hidden');
+            document.getElementById('tags-catalog').classList.add('hidden');
+            document.getElementById('sub-filter-bar').classList.remove('hidden');
 
-        // 2. Fetch Rankings from Python API
-        async function fetchRankings() {
-            try {
-                const res = await fetch(`${PYTHON_API_URL}/api/rankings`);
-                if (res.ok) {
-                    rankingsData = await res.json();
-                    renderRankings(rankingsData);
-                }
-            } catch (e) {
-                console.error("Failed to fetch rankings:", e);
-            }
-        }
-
-        function renderRankings(items) {
-            const container = document.getElementById('rankings-list');
-            const countBadge = document.getElementById('ranking-count');
-            countBadge.innerText = `${items.length} Videos`;
-
-            if (items.length === 0) {
-                container.innerHTML = `<div class="text-center text-xs text-slate-500 py-8 font-mono">No video rankings available.</div>`;
+            if (videos.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-20 text-center text-slate-500 font-mono text-xs">
+                        <i class="fa-solid fa-magnifying-glass text-3xl mb-3 text-slate-600"></i>
+                        <p>找不到符合條件的影片，請更換關鍵字或篩選標籤。</p>
+                    </div>
+                `;
                 return;
             }
 
-            container.innerHTML = items.map((item, idx) => {
-                const rankColor = item.rank === 1 ? 'bg-amber-500 text-slate-950 font-bold' :
-                                  item.rank === 2 ? 'bg-slate-300 text-slate-950 font-bold' :
-                                  item.rank === 3 ? 'bg-amber-700 text-white font-bold' : 'bg-slate-800 text-slate-400';
+            if (currentViewMode === 'list') {
+                container.className = "space-y-3";
+                container.innerHTML = videos.map(v => renderListCard(v)).join('');
+            } else {
+                container.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5";
+                container.innerHTML = videos.map(v => renderGridCard(v)).join('');
+            }
+        }
 
-                return `
-                    <div onclick="selectVideo('${item.id}')" class="group bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-cyber-accent rounded-xl p-3 cursor-pointer transition-all duration-200 shadow-sm flex space-x-3 items-start">
-                        <!-- Thumbnail & Rank Badge -->
-                        <div class="relative w-24 aspect-video rounded-lg overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800">
-                            <img src="${item.cover_url}" alt="${item.code}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                            <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-mono ${rankColor}">
-                                #${item.rank}
+        function renderGridCard(video) {
+            const isFav = favoritesList.includes(video.code);
+            const favIcon = isFav ? 'fa-solid fa-heart text-rose-500' : 'fa-regular fa-heart text-white/80';
+            const is4k = video.tags.includes('4K');
+            const isSub = video.tags.includes('中文字幕');
+
+            return `
+                <div class="group bg-missav-card border border-missav-border hover:border-missav-primary rounded-2xl overflow-hidden card-shadow glow-hover transition-all duration-300 flex flex-col">
+                    <!-- Thumbnail & Hover Actions -->
+                    <div class="relative w-full aspect-video bg-slate-950 overflow-hidden cursor-pointer" onclick="openCinemaMode('${video.code}')">
+                        <img src="${video.cover_url}" alt="${video.code}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        
+                        <!-- Top Badges -->
+                        <div class="absolute top-2 left-2 flex items-center space-x-1.5">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-missav-dark/80 text-missav-cyan border border-missav-cyan/30 backdrop-blur-sm">
+                                ${video.code}
                             </span>
-                            <span class="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-slate-950/80 text-[9px] font-mono text-slate-300">
-                                ${item.duration}
-                            </span>
+                            ${is4k ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-missav-gold text-slate-950">4K</span>' : ''}
+                            ${isSub ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-missav-accent text-white">字幕</span>' : ''}
                         </div>
 
-                        <!-- Info -->
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="font-mono text-xs font-bold text-cyber-neon truncate">${item.code}</span>
-                                <span class="text-[10px] font-mono text-amber-400"><i class="fa-solid fa-star text-[9px] mr-0.5"></i>${item.rating}</span>
+                        <!-- Favorite Heart Button -->
+                        <button onclick="event.stopPropagation(); toggleFavorite('${video.code}')" class="absolute top-2 right-2 w-7 h-7 rounded-full bg-slate-950/60 hover:bg-slate-950/90 flex items-center justify-center backdrop-blur-sm transition-transform active:scale-90">
+                            <i class="${favIcon} text-xs"></i>
+                        </button>
+
+                        <!-- Bottom Metadata Bar -->
+                        <div class="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-slate-950/80 text-[10px] font-mono text-slate-300 backdrop-blur-sm">
+                            ${video.duration}
+                        </div>
+                    </div>
+
+                    <!-- Details Content -->
+                    <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
+                        <div>
+                            <h3 onclick="openCinemaMode('${video.code}')" class="text-xs font-semibold text-slate-200 hover:text-white cursor-pointer line-clamp-2 leading-relaxed transition-colors">
+                                ${video.title}
+                            </h3>
+                        </div>
+
+                        <div class="pt-1 border-t border-missav-border/60 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                            <span onclick="filterByActress('${video.actress}')" class="text-missav-cyan hover:underline cursor-pointer flex items-center">
+                                <i class="fa-solid fa-user-circle mr-1"></i>${video.actress}
+                            </span>
+                            <div class="flex items-center space-x-2 text-[10px]">
+                                <span class="text-slate-400"><i class="fa-solid fa-eye mr-0.5"></i>${(video.views/1000).toFixed(1)}k</span>
+                                <span class="text-missav-gold font-bold"><i class="fa-solid fa-star mr-0.5 text-[9px]"></i>${video.rating}</span>
                             </div>
-                            <h4 class="text-xs font-medium text-slate-200 group-hover:text-white line-clamp-2 leading-snug mb-1">${item.title}</h4>
-                            <div class="flex items-center justify-between text-[10px] text-slate-400 font-mono">
-                                <span>${item.actress}</span>
-                                <span class="text-slate-500"><i class="fa-solid fa-eye text-[9px] mr-1"></i>${(item.views/1000).toFixed(1)}k</span>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="pt-2 flex items-center justify-between gap-1.5 border-t border-missav-border/40">
+                            <button onclick="openCinemaMode('${video.code}')" class="flex-1 px-2.5 py-1.5 rounded-lg bg-missav-primary hover:bg-purple-600 text-white text-[11px] font-semibold flex items-center justify-center space-x-1 transition-all">
+                                <i class="fa-solid fa-play text-[10px]"></i>
+                                <span>立即播放</span>
+                            </button>
+                            <a href="${video.missav_url || ('https://missav.ws/' + video.code.toLowerCase())}" target="_blank" onclick="event.stopPropagation()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-mono flex items-center space-x-1 transition-all border border-missav-border" title="在 MissAV.ws 原站開啟">
+                                <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-pink-400"></i>
+                                <span>原站</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderListCard(video) {
+            const isFav = favoritesList.includes(video.code);
+            const favIcon = isFav ? 'fa-solid fa-heart text-rose-500' : 'fa-regular fa-heart text-white/80';
+
+            return `
+                <div class="bg-missav-card border border-missav-border hover:border-missav-primary rounded-xl p-3 flex items-center space-x-4 transition-all glow-hover">
+                    <div class="relative w-36 aspect-video rounded-lg overflow-hidden bg-slate-950 flex-shrink-0 cursor-pointer" onclick="openCinemaMode('${video.code}')">
+                        <img src="${video.cover_url}" alt="${video.code}" class="w-full h-full object-cover">
+                        <span class="absolute bottom-1 right-1 px-1 rounded bg-slate-950/80 text-[9px] font-mono text-slate-300">${video.duration}</span>
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-missav-primary/20 text-missav-primary border border-missav-primary/30">${video.code}</span>
+                            <span onclick="filterByActress('${video.actress}')" class="text-xs font-mono text-missav-cyan hover:underline cursor-pointer">${video.actress}</span>
+                            <span class="text-slate-500 text-[11px] font-mono">${video.release_date}</span>
+                        </div>
+                        <h3 onclick="openCinemaMode('${video.code}')" class="text-xs font-semibold text-slate-200 hover:text-white cursor-pointer truncate mb-1">
+                            ${video.title}
+                        </h3>
+                        <div class="flex flex-wrap gap-1">
+                            ${video.tags.map(t => `<span onclick="selectFilterTag('${t}')" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer font-mono">${t}</span>`).join('')}
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2 flex-shrink-0 pr-2">
+                        <span class="text-xs font-mono text-missav-gold font-bold mr-1"><i class="fa-solid fa-star text-[10px] mr-1"></i>${video.rating}</span>
+                        <a href="${video.missav_url || ('https://missav.ws/' + video.code.toLowerCase())}" target="_blank" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-mono flex items-center space-x-1 border border-missav-border" title="在 MissAV.ws 原站開啟">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-xs text-pink-400"></i>
+                            <span>MissAV 原站</span>
+                        </a>
+                        <button onclick="toggleFavorite('${video.code}')" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center">
+                            <i class="${favIcon} text-xs"></i>
+                        </button>
+                        <button onclick="openCinemaMode('${video.code}')" class="px-3 py-1.5 rounded-lg bg-missav-primary hover:bg-purple-600 text-white text-xs font-semibold flex items-center space-x-1">
+                            <i class="fa-solid fa-play text-[10px]"></i>
+                            <span>播放</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 2. Actresses View
+        async function loadActresses() {
+            try {
+                const res = await fetch(`${PY_API}/api/actresses`);
+                if (res.ok) {
+                    allActresses = await res.json();
+                }
+            } catch (e) {
+                console.error("Failed to load actresses:", e);
+            }
+        }
+
+        function renderActressesView() {
+            document.getElementById('video-catalog').classList.add('hidden');
+            document.getElementById('actresses-catalog').classList.remove('hidden');
+            document.getElementById('tags-catalog').classList.add('hidden');
+            document.getElementById('sub-filter-bar').classList.add('hidden');
+            document.getElementById('results-count').innerText = `${allActresses.length} 位女優`;
+
+            const container = document.getElementById('actresses-catalog');
+            container.innerHTML = allActresses.map(a => `
+                <div onclick="filterByActress('${a.name}')" class="group bg-missav-card border border-missav-border hover:border-missav-cyan rounded-2xl p-4 flex flex-col items-center text-center cursor-pointer transition-all glow-hover">
+                    <div class="w-24 h-24 rounded-full overflow-hidden mb-3 border-2 border-missav-border group-hover:border-missav-cyan transition-colors">
+                        <img src="${a.avatar}" alt="${a.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform">
+                    </div>
+                    <h4 class="text-sm font-bold text-slate-100 group-hover:text-missav-cyan mb-1">${a.name}</h4>
+                    <p class="text-[11px] font-mono text-slate-400 mb-2">罩杯: <strong class="text-missav-accent">${a.cup}</strong> · 出道: ${a.debut}</p>
+                    <span class="text-[10px] font-mono px-2.5 py-1 rounded-full bg-slate-800 text-missav-primary border border-missav-primary/20">
+                        ${a.works_count} 部收錄作品
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        // 3. Tags View
+        async function loadTags() {
+            try {
+                const res = await fetch(`${PY_API}/api/tags`);
+                if (res.ok) {
+                    allTags = await res.json();
+                }
+            } catch (e) {
+                console.error("Failed to load tags:", e);
+            }
+        }
+
+        function renderTagsView() {
+            document.getElementById('video-catalog').classList.add('hidden');
+            document.getElementById('actresses-catalog').classList.add('hidden');
+            document.getElementById('tags-catalog').classList.remove('hidden');
+            document.getElementById('sub-filter-bar').classList.add('hidden');
+            document.getElementById('results-count').innerText = `${allTags.length} 個分類標籤`;
+
+            const container = document.getElementById('tags-catalog');
+            container.innerHTML = allTags.map(t => `
+                <button onclick="selectFilterTag('${t.name}')" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-missav-primary border border-missav-border text-xs font-mono text-slate-300 hover:text-white transition-all flex items-center space-x-2 group">
+                    <i class="fa-solid fa-hashtag text-slate-500 group-hover:text-white"></i>
+                    <span>${t.name}</span>
+                    <span class="px-1.5 py-0.5 rounded-full bg-slate-800 group-hover:bg-purple-900 text-[10px] text-slate-400 group-hover:text-white">${t.count}</span>
+                </button>
+            `).join('');
+        }
+
+        // 4. Favorites View
+        function renderFavoritesView() {
+            const favVideos = allVideos.filter(v => favoritesList.includes(v.code));
+            renderVideoCards(favVideos);
+            document.getElementById('section-title-text').innerText = "我的收藏作品";
+        }
+
+        // 4.1 Paths & MissAV Links Directory View
+        async function renderPathsView() {
+            document.getElementById('video-catalog').classList.add('hidden');
+            document.getElementById('actresses-catalog').classList.add('hidden');
+            document.getElementById('tags-catalog').classList.add('hidden');
+            document.getElementById('paths-catalog').classList.remove('hidden');
+            document.getElementById('sub-filter-bar').classList.add('hidden');
+            document.getElementById('section-title-text').innerText = "📋 影音路徑與 MissAV 來源對照表";
+
+            try {
+                const res = await fetch(`${PY_API}/api/catalog/paths`);
+                if (!res.ok) return;
+                const paths = await res.json();
+                document.getElementById('results-count').innerText = `${paths.length} 筆完整對照`;
+
+                const container = document.getElementById('paths-catalog');
+                container.innerHTML = `
+                    <div class="bg-missav-card border border-missav-border rounded-2xl overflow-hidden card-shadow">
+                        <div class="p-4 bg-slate-950/80 border-b border-missav-border flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-100 flex items-center">
+                                    <i class="fa-solid fa-network-wired text-missav-cyan mr-2"></i>
+                                    MissAV.ws 官方來源超連結與 Go 串流代理對照目錄
+                                </h3>
+                                <p class="text-xs text-slate-400 font-mono mt-0.5">點擊「MissAV 原站」可直接在新視窗跳轉；點擊「播放」可透過 Go 代理伺服器在劇院模式順暢播放。</p>
                             </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs font-mono">
+                                <thead class="bg-slate-900/90 text-slate-400 border-b border-missav-border">
+                                    <tr>
+                                        <th class="p-3.5">番號</th>
+                                        <th class="p-3.5">影片標題 & 女優</th>
+                                        <th class="p-3.5">原始 MissAV 連結</th>
+                                        <th class="p-3.5">Go Proxy 串流路徑</th>
+                                        <th class="p-3.5 text-right">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-missav-border/60 text-slate-200">
+                                    ${paths.map(p => `
+                                        <tr class="hover:bg-slate-900/50 transition-colors">
+                                            <td class="p-3.5 whitespace-nowrap">
+                                                <span class="px-2 py-0.5 rounded bg-missav-primary/20 text-missav-primary border border-missav-primary/30 font-bold">${p.code}</span>
+                                            </td>
+                                            <td class="p-3.5 max-w-xs">
+                                                <div class="truncate font-sans font-medium text-slate-100">${p.title}</div>
+                                                <div class="text-[11px] text-missav-cyan mt-0.5">${p.actress} · ⭐ ${p.rating}</div>
+                                            </td>
+                                            <td class="p-3.5 max-w-sm">
+                                                <a href="${p.missav_url}" target="_blank" class="text-pink-400 hover:text-pink-300 hover:underline flex items-center space-x-1.5 truncate" title="開啟 MissAV 原站">
+                                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] flex-shrink-0"></i>
+                                                    <span class="truncate">${p.missav_url}</span>
+                                                </a>
+                                            </td>
+                                            <td class="p-3.5 max-w-sm">
+                                                <div class="flex items-center space-x-1.5 text-emerald-400">
+                                                    <span class="truncate text-[11px]">${p.proxy_stream_url}</span>
+                                                    <button onclick="navigator.clipboard.writeText('${p.proxy_stream_url}'); showToast('已複製 Proxy 代理路徑！');" class="text-slate-400 hover:text-white flex-shrink-0 p-1" title="複製代理路徑">
+                                                        <i class="fa-solid fa-copy"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td class="p-3.5 text-right whitespace-nowrap space-x-1.5">
+                                                <a href="${p.missav_url}" target="_blank" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-missav-border text-xs transition-all inline-flex items-center space-x-1">
+                                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-pink-400"></i>
+                                                    <span>MissAV 原站</span>
+                                                </a>
+                                                <button onclick="openCinemaMode('${p.code}')" class="px-3 py-1 rounded bg-missav-primary hover:bg-purple-600 text-white text-xs font-semibold shadow transition-all inline-flex items-center space-x-1">
+                                                    <i class="fa-solid fa-play text-[10px]"></i>
+                                                    <span>播放</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 `;
-            }).join('');
-        }
-
-        function filterRankings() {
-            const query = document.getElementById('ranking-search').value.toLowerCase();
-            const filtered = rankingsData.filter(item => 
-                item.code.toLowerCase().includes(query) ||
-                item.title.toLowerCase().includes(query) ||
-                item.actress.toLowerCase().includes(query)
-            );
-            renderRankings(filtered);
-        }
-
-        // 3. Video Selection & HLS Stream Player
-        function selectVideo(id) {
-            const item = rankingsData.find(v => v.id === id);
-            if (!item) return;
-
-            document.getElementById('player-code').innerText = item.code;
-            document.getElementById('player-title').innerText = item.title;
-
-            // Construct Proxied URL via Go Backend (Port 8080)
-            const proxiedUrl = `${GO_API_URL}/proxy/stream?url=${encodeURIComponent(item.stream_url)}`;
-            document.getElementById('stream-url-input').value = proxiedUrl;
-
-            loadHlsStream(proxiedUrl);
-            appendTerminalLog('SYSTEM', 'SUCCESS', `Loaded ranking item [${item.code}]. Proxy URL generated: ${proxiedUrl}`);
-        }
-
-        function playCustomProxyStream() {
-            let inputUrl = document.getElementById('stream-url-input').value.trim();
-            if (!inputUrl) return;
-
-            // If user pasted a direct URL without proxy prefix, automatically wrap with proxy
-            if (!inputUrl.startsWith(GO_API_URL)) {
-                inputUrl = `${GO_API_URL}/proxy/stream?url=${encodeURIComponent(inputUrl)}`;
-                document.getElementById('stream-url-input').value = inputUrl;
-            }
-
-            document.getElementById('player-code').innerText = 'CUSTOM';
-            document.getElementById('player-title').innerText = 'Custom Stream Playlist';
-            loadHlsStream(inputUrl);
-            appendTerminalLog('USER', 'INFO', `Triggered custom stream play via Go Proxy: ${inputUrl}`);
-        }
-
-        function loadHlsStream(url) {
-            const video = document.getElementById('hls-video');
-            const placeholder = document.getElementById('video-placeholder');
-
-            placeholder.classList.add('hidden');
-            video.classList.remove('hidden');
-
-            if (Hls.isSupported()) {
-                if (hlsPlayer) {
-                    hlsPlayer.destroy();
-                }
-                hlsPlayer = new Hls({
-                    enableWorker: true,
-                    lowLatencyMode: true
-                });
-                hlsPlayer.loadSource(url);
-                hlsPlayer.attachMedia(video);
-                hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
-                    video.play().catch(e => console.log("Autoplay blocked:", e));
-                });
-                hlsPlayer.on(Hls.Events.ERROR, (event, data) => {
-                    if (data.fatal) {
-                        appendTerminalLog('PLAYER', 'WARNING', `HLS Fatal error: ${data.type} - ${data.details}`);
-                    }
-                });
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                video.src = url;
-                video.play();
+            } catch (e) {
+                console.error("Failed to render paths:", e);
             }
         }
 
-        // 4. WebSocket Terminal Logic
-        function initWebSocket() {
+        function copyElementText(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const text = el.href || el.innerText;
+            navigator.clipboard.writeText(text);
+            showToast("已複製連結/路徑至剪貼簿！");
+        }
+
+        function toggleFavorite(code) {
+            const idx = favoritesList.indexOf(code);
+            if (idx === -1) {
+                favoritesList.push(code);
+                showToast(`已將 [${code}] 加入收藏！`);
+            } else {
+                favoritesList.splice(idx, 1);
+                showToast(`已將 [${code}] 從收藏移除。`);
+            }
+            localStorage.setItem('missav_favorites', JSON.stringify(favoritesList));
+            updateFavoriteCounter();
+            loadVideos();
+        }
+
+        function updateFavoriteCounter() {
+            document.getElementById('fav-counter').innerText = favoritesList.length;
+        }
+
+        // 5. Cinema Mode (Modal Player)
+        async function openCinemaMode(code) {
             try {
-                wsConn = new WebSocket(WS_URL);
+                const res = await fetch(`${PY_API}/api/videos/${encodeURIComponent(code)}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                activeVideo = data.video;
+                const related = data.related || [];
 
-                wsConn.onopen = () => {
-                    const wsDot = document.getElementById('badge-ws-dot');
-                    const wsTxt = document.getElementById('badge-ws-text');
-                    const wsInd = document.getElementById('terminal-ws-indicator');
+                document.getElementById('cinema-code').innerText = activeVideo.code;
+                document.getElementById('cinema-title').innerText = activeVideo.title;
+                document.getElementById('cinema-actress').innerText = activeVideo.actress;
+                document.getElementById('cinema-date').innerText = activeVideo.release_date;
+                document.getElementById('cinema-rating').innerText = `⭐ ${activeVideo.rating}`;
+                document.getElementById('cinema-views').innerText = `${activeVideo.views.toLocaleString()} 次`;
 
-                    wsDot.className = "w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]";
-                    wsTxt.className = "text-emerald-400 font-semibold";
-                    wsTxt.innerText = "Connected";
-                    wsInd.className = "text-emerald-400 font-semibold";
-                    wsInd.innerText = "● WS Connected";
+                // Set MissAV Links and Paths
+                const missavUrl = activeVideo.missav_url || (`https://missav.ws/${activeVideo.code.toLowerCase()}`);
+                const proxyUrl = `${GO_API}/proxy/stream?url=${encodeURIComponent(activeVideo.stream_url)}&referer=https://missav.ws/`;
 
-                    appendTerminalLog('WS_GATEWAY', 'SUCCESS', 'Established active WebSocket stream with Go Backend Gateway.');
-                };
+                const cinemaMissavBtn = document.getElementById('cinema-missav-btn');
+                if (cinemaMissavBtn) cinemaMissavBtn.href = missavUrl;
+                const pathMissav = document.getElementById('cinema-path-missav');
+                if (pathMissav) { pathMissav.href = missavUrl; pathMissav.innerText = missavUrl; }
+                const pathProxy = document.getElementById('cinema-path-proxy');
+                if (pathProxy) pathProxy.innerText = proxyUrl;
 
-                wsConn.onmessage = (event) => {
-                    try {
-                        const payload = JSON.parse(event.data);
-                        appendTerminalLog(payload.source || 'AGENT', payload.level || 'INFO', payload.message, payload.data, payload.timestamp);
-                    } catch (e) {
-                        appendTerminalLog('WS_RAW', 'INFO', event.data);
-                    }
-                };
+                // Cinema Favorite status
+                const isFav = favoritesList.includes(activeVideo.code);
+                document.getElementById('cinema-fav-btn').innerHTML = isFav ? 
+                    '<i class="fa-solid fa-heart text-rose-500 mr-1"></i>已收藏' : 
+                    '<i class="fa-regular fa-heart mr-1"></i>收藏';
 
-                wsConn.onclose = () => {
-                    const wsDot = document.getElementById('badge-ws-dot');
-                    const wsTxt = document.getElementById('badge-ws-text');
-                    const wsInd = document.getElementById('terminal-ws-indicator');
+                // Render tags
+                document.getElementById('cinema-tags').innerHTML = activeVideo.tags.map(t => 
+                    `<span onclick="closeCinemaMode(); selectFilterTag('${t}')" class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-missav-border text-slate-300 hover:text-white cursor-pointer">${t}</span>`
+                ).join('');
 
-                    wsDot.className = "w-2 h-2 rounded-full bg-rose-500 animate-pulse";
-                    wsTxt.className = "text-rose-400 font-semibold";
-                    wsTxt.innerText = "Disconnected";
-                    wsInd.className = "text-rose-400 font-semibold";
-                    wsInd.innerText = "● WS Disconnected";
+                // Render related
+                document.getElementById('cinema-related-grid').innerHTML = related.map(r => `
+                    <div onclick="openCinemaMode('${r.code}')" class="group bg-slate-900 border border-missav-border hover:border-missav-primary rounded-lg overflow-hidden cursor-pointer transition-all">
+                        <div class="relative aspect-video">
+                            <img src="${r.cover_url}" class="w-full h-full object-cover">
+                            <span class="absolute bottom-1 right-1 px-1 rounded bg-black/80 text-[9px] font-mono text-slate-300">${r.duration}</span>
+                        </div>
+                        <div class="p-2">
+                            <span class="text-[10px] font-mono font-bold text-missav-cyan">${r.code}</span>
+                            <p class="text-[11px] text-slate-300 truncate">${r.title}</p>
+                        </div>
+                    </div>
+                `).join('');
 
-                    // Auto-reconnect after 3 seconds
-                    setTimeout(initWebSocket, 3000);
-                };
+                // Open modal
+                document.getElementById('cinema-modal').classList.remove('hidden');
 
-                wsConn.onerror = (err) => {
-                    console.error("WS error:", err);
-                };
+                // Start Stream
+                playStreamForActiveVideo();
 
             } catch (e) {
-                console.error("WS Init Error:", e);
+                console.error("Open cinema error:", e);
+            }
+        }
+
+        function playStreamForActiveVideo() {
+            if (!activeVideo) return;
+            const useProxy = document.getElementById('cinema-proxy-toggle').checked;
+            let streamTarget = activeVideo.stream_url;
+
+            if (useProxy) {
+                streamTarget = `${GO_API}/proxy/stream?url=${encodeURIComponent(activeVideo.stream_url)}&referer=https://missav.ws/`;
+            }
+
+            const videoEl = document.getElementById('cinema-video');
+            if (Hls.isSupported()) {
+                if (hlsInstance) hlsInstance.destroy();
+                hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true });
+                hlsInstance.loadSource(streamTarget);
+                hlsInstance.attachMedia(videoEl);
+                hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+                    videoEl.play().catch(e => console.log("Autoplay:", e));
+                });
+            } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+                videoEl.src = streamTarget;
+                videoEl.play();
+            }
+        }
+
+        function toggleProxyPlayback() {
+            playStreamForActiveVideo();
+            showToast(document.getElementById('cinema-proxy-toggle').checked ? 
+                "已切換至 Go Proxy 模式 (Referer: https://missav.ws/)" : 
+                "已切換為直連串流模式");
+        }
+
+        function closeCinemaMode() {
+            document.getElementById('cinema-modal').classList.add('hidden');
+            const videoEl = document.getElementById('cinema-video');
+            videoEl.pause();
+            if (hlsInstance) {
+                hlsInstance.destroy();
+                hlsInstance = null;
+            }
+        }
+
+        function toggleCinemaFavorite() {
+            if (!activeVideo) return;
+            toggleFavorite(activeVideo.code);
+            const isFav = favoritesList.includes(activeVideo.code);
+            document.getElementById('cinema-fav-btn').innerHTML = isFav ? 
+                '<i class="fa-solid fa-heart text-rose-500 mr-1"></i>已收藏' : 
+                '<i class="fa-regular fa-heart mr-1"></i>收藏';
+        }
+
+        function copyCurrentM3u8() {
+            if (!activeVideo) return;
+            const useProxy = document.getElementById('cinema-proxy-toggle').checked;
+            const url = useProxy ? 
+                `${GO_API}/proxy/stream?url=${encodeURIComponent(activeVideo.stream_url)}` : 
+                activeVideo.stream_url;
+            navigator.clipboard.writeText(url);
+            showToast("已複製 M3U8 串流網址至剪貼簿！");
+        }
+
+        // 6. Filter & Search Controls
+        function switchCategory(cat) {
+            currentCategory = cat;
+            currentSearch = '';
+            document.getElementById('global-search').value = '';
+            document.getElementById('search-clear-btn').classList.add('hidden');
+
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                if (btn.dataset.cat === cat) {
+                    btn.className = "nav-tab px-3.5 py-1.5 rounded-lg bg-missav-primary text-white whitespace-nowrap transition-all";
+                } else {
+                    btn.className = "nav-tab px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-missav-card whitespace-nowrap transition-all";
+                }
+            });
+
+            // Update title
+            const titles = {
+                'all': '全部影片列表',
+                'recent': '✨ 最近更新影片',
+                'trending': '🔥 熱門發行排行榜',
+                'chinese-subtitle': '🈲 中文字幕精選',
+                'uncensored': '💎 無修正流出特輯',
+                'actresses': '👩‍🎤 熱門女優專區',
+                'tags': '🏷️ 分類標籤雲',
+                'favorites': '❤️ 我的收藏作品',
+                'paths': '📋 影音路徑與 MissAV 來源對照表'
+            };
+            document.getElementById('section-title-text').innerText = titles[cat] || '影片列表';
+            if (cat === 'paths') {
+                renderPathsView();
+            } else {
+                loadVideos();
+            }
+        }
+
+        function selectFilterTag(tag) {
+            currentTag = tag;
+            if (currentCategory === 'tags' || currentCategory === 'actresses') {
+                currentCategory = 'all';
+                switchCategory('all');
+            }
+            document.querySelectorAll('.tag-pill').forEach(btn => {
+                if (btn.dataset.tag === tag) {
+                    btn.className = "tag-pill px-2.5 py-1 rounded-md bg-missav-primary/20 text-missav-primary border border-missav-primary/30 font-medium whitespace-nowrap";
+                } else {
+                    btn.className = "tag-pill px-2.5 py-1 rounded-md bg-missav-card text-slate-400 hover:text-white border border-missav-border whitespace-nowrap";
+                }
+            });
+            updateActiveFilterBadge();
+            loadVideos();
+        }
+
+        function filterByActress(actressName) {
+            currentSearch = actressName;
+            document.getElementById('global-search').value = actressName;
+            document.getElementById('search-clear-btn').classList.remove('hidden');
+            currentCategory = 'all';
+            switchCategory('all');
+            updateActiveFilterBadge(`女優: ${actressName}`);
+            loadVideos();
+        }
+
+        function handleSearchInput() {
+            const query = document.getElementById('global-search').value;
+            currentSearch = query;
+            const clearBtn = document.getElementById('search-clear-btn');
+            if (query.trim()) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+            updateActiveFilterBadge(query ? `搜尋: ${query}` : null);
+            loadVideos();
+        }
+
+        function clearSearch() {
+            document.getElementById('global-search').value = '';
+            currentSearch = '';
+            document.getElementById('search-clear-btn').classList.add('hidden');
+            updateActiveFilterBadge(null);
+            loadVideos();
+        }
+
+        function updateActiveFilterBadge(label = null) {
+            const badge = document.getElementById('active-filter-badge');
+            const lbl = document.getElementById('active-filter-label');
+            if (label || (currentTag !== 'all')) {
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+                lbl.innerText = label || `標籤: ${currentTag}`;
+            } else {
+                badge.classList.add('hidden');
+                badge.classList.remove('flex');
+            }
+        }
+
+        function resetFilters() {
+            currentTag = 'all';
+            currentSearch = '';
+            document.getElementById('global-search').value = '';
+            document.getElementById('search-clear-btn').classList.add('hidden');
+            updateActiveFilterBadge(null);
+            selectFilterTag('all');
+        }
+
+        function applySorting() {
+            currentSort = document.getElementById('sort-select').value;
+            loadVideos();
+        }
+
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            document.getElementById('btn-view-grid').className = mode === 'grid' ? 
+                'px-2.5 py-1 rounded-lg bg-missav-primary text-white font-semibold transition-all' : 
+                'px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all';
+            document.getElementById('btn-view-list').className = mode === 'list' ? 
+                'px-2.5 py-1 rounded-lg bg-missav-primary text-white font-semibold transition-all' : 
+                'px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all';
+            renderVideoCards(allVideos);
+        }
+
+        // 7. WebSocket Agent Terminal Logic
+        function initWebSocketConnection() {
+            try {
+                wsClient = new WebSocket(WS_URL);
+                wsClient.onopen = () => {
+                    document.getElementById('ws-indicator-pill').className = "text-missav-green font-semibold";
+                    document.getElementById('ws-indicator-pill').innerText = "● WS 連線中 (8080)";
+                    appendTerminalLog('WS_GATEWAY', 'SUCCESS', 'Connected to Go Agent Broadcast Gateway (Port 8080).');
+                };
+
+                wsClient.onmessage = (evt) => {
+                    try {
+                        const payload = JSON.parse(evt.data);
+                        appendTerminalLog(payload.source || 'AGENT', payload.level || 'INFO', payload.message, payload.data, payload.timestamp);
+                    } catch (e) {
+                        appendTerminalLog('RAW', 'INFO', evt.data);
+                    }
+                };
+
+                wsClient.onclose = () => {
+                    document.getElementById('ws-indicator-pill').className = "text-rose-400 font-semibold";
+                    document.getElementById('ws-indicator-pill').innerText = "● WS 離線重試中...";
+                    setTimeout(initWebSocketConnection, 3000);
+                };
+            } catch (err) {
+                console.error("WS error:", err);
             }
         }
 
         function appendTerminalLog(source, level, message, data = null, timestamp = null) {
-            totalLogCount++;
-            document.getElementById('log-count').innerText = totalLogCount;
+            totalLogs++;
+            document.getElementById('total-log-events').innerText = totalLogs;
 
-            const timeStr = timestamp || new Date().toLocaleTimeString() + '.' + String(Math.floor(Date.now() % 1000)).padStart(3, '0');
-            const levelColor = level === 'SUCCESS' ? 'text-emerald-400 font-bold' :
-                               level === 'WARNING' ? 'text-amber-400 font-bold' :
-                               level === 'ERROR' ? 'text-rose-400 font-bold' : 'text-cyber-neon font-bold';
+            const time = timestamp || new Date().toLocaleTimeString();
+            const color = level === 'SUCCESS' ? 'text-missav-green font-bold' :
+                          level === 'WARNING' ? 'text-missav-gold font-bold' :
+                          level === 'ERROR' ? 'text-rose-400 font-bold' : 'text-missav-cyan font-bold';
 
             const logEl = document.createElement('div');
-            logEl.className = `terminal-line flex flex-col space-y-1 font-mono text-xs border-b border-slate-900/60 pb-1.5 log-item-${level}`;
+            logEl.className = `log-row log-lvl-${level} border-b border-slate-900/60 pb-1`;
 
-            let dataHtml = '';
+            let extraHtml = '';
             if (data) {
-                dataHtml = `<pre class="mt-1 p-2 rounded bg-slate-900 text-[10px] text-slate-300 font-mono overflow-x-auto border border-slate-800">${JSON.stringify(data, null, 2)}</pre>`;
+                extraHtml = `<pre class="mt-1 p-1.5 rounded bg-slate-900 text-[10px] text-slate-300 font-mono overflow-x-auto">${JSON.stringify(data, null, 2)}</pre>`;
             }
 
             logEl.innerHTML = `
-                <div class="flex items-start space-x-2">
-                    <span class="text-slate-500 select-none flex-shrink-0">${timeStr}</span>
-                    <span class="text-slate-400 font-semibold select-none flex-shrink-0">[${source}]</span>
-                    <span class="${levelColor} flex-shrink-0">[${level}]</span>
-                    <span class="text-slate-200 flex-1 leading-relaxed break-all">${message}</span>
+                <div class="flex items-start space-x-1.5">
+                    <span class="text-slate-600 select-none">${time}</span>
+                    <span class="text-slate-400 font-semibold">[${source}]</span>
+                    <span class="${color}">[${level}]</span>
+                    <span class="text-slate-200 flex-1 break-all">${message}</span>
                 </div>
-                ${dataHtml}
+                ${extraHtml}
             `;
 
-            const terminalBody = document.getElementById('terminal-body');
-            terminalBody.appendChild(logEl);
+            const container = document.getElementById('terminal-logs-body');
+            container.appendChild(logEl);
 
-            // Auto-scroll logic
-            if (document.getElementById('autoscroll-toggle').checked) {
-                terminalBody.scrollTop = terminalBody.scrollHeight;
+            if (document.getElementById('autoscroll-chk').checked) {
+                container.scrollTop = container.scrollHeight;
             }
         }
 
-        function clearTerminal() {
-            document.getElementById('terminal-body').innerHTML = '<div class="terminal-line text-slate-500 italic">[SYSTEM] Terminal cleared by user.</div>';
-            totalLogCount = 0;
-            document.getElementById('log-count').innerText = '0';
+        function toggleTerminalDrawer() {
+            const drawer = document.getElementById('terminal-drawer');
+            drawer.classList.toggle('translate-x-full');
         }
 
-        function filterLogs(level) {
-            currentFilter = level;
-            document.querySelectorAll('.log-filter-btn').forEach(btn => {
-                if (btn.dataset.level === level) {
-                    btn.className = "log-filter-btn px-2 py-0.5 rounded bg-cyber-accent text-white font-semibold";
-                } else {
-                    btn.className = "log-filter-btn px-2 py-0.5 rounded bg-slate-800 text-slate-400 hover:text-slate-200";
-                }
-            });
+        function clearTerminalLogs() {
+            document.getElementById('terminal-logs-body').innerHTML = '<div class="text-slate-500 italic">[SYSTEM] Terminal logs cleared.</div>';
+            totalLogs = 0;
+            document.getElementById('total-log-events').innerText = '0';
+        }
 
-            // Re-filter terminal output DOM
-            const items = document.querySelectorAll('#terminal-body > div');
-            items.forEach(el => {
-                if (level === 'ALL') {
-                    el.style.display = 'flex';
-                } else if (level === 'CRAWLER') {
-                    el.innerText.includes('CRAWLER') || el.innerText.includes('PARSER') ? el.style.display = 'flex' : el.style.display = 'none';
+        function setLogFilter(lvl) {
+            logFilter = lvl;
+            document.querySelectorAll('.log-pill').forEach(btn => {
+                btn.className = btn.dataset.lvl === lvl ? 
+                    'log-pill px-2 py-0.5 rounded bg-missav-primary text-white' : 
+                    'log-pill px-2 py-0.5 rounded bg-slate-800 text-slate-400';
+            });
+            document.querySelectorAll('.log-row').forEach(row => {
+                if (lvl === 'ALL' || row.classList.contains(`log-lvl-${lvl}`)) {
+                    row.style.display = 'block';
                 } else {
-                    el.classList.contains(`log-item-${level}`) ? el.style.display = 'flex' : el.style.display = 'none';
+                    row.style.display = 'none';
                 }
             });
         }
 
-        // 5. Trigger Crawl Action
-        async function triggerCrawlSession() {
+        async function triggerManualCrawl() {
             try {
-                const res = await fetch(`${PYTHON_API_URL}/api/crawl/trigger`, { method: 'POST' });
+                const res = await fetch(`${PY_API}/api/crawl/trigger`, { method: 'POST' });
                 if (res.ok) {
-                    appendTerminalLog('FRONTEND', 'SUCCESS', 'Manual crawl request sent to Python Agent.');
-                    setTimeout(fetchRankings, 1000);
+                    showToast("已觸發 Python 爬蟲抓取 MissAV.ws 即時數據！");
+                    setTimeout(loadVideos, 1000);
                 }
             } catch (e) {
-                appendTerminalLog('FRONTEND', 'ERROR', `Failed to trigger crawl session: ${e}`);
+                showToast("觸發失敗，請檢查 Python 服務狀態");
             }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
         }
     </script>
 </body>
