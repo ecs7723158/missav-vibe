@@ -1,6 +1,8 @@
 import asyncio
 import random
 import time
+import re
+import urllib.parse
 from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, BackgroundTasks, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -437,6 +439,166 @@ def get_catalog_paths():
             "proxy_stream_url": v.get("proxy_stream_url", f"http://localhost:8080/proxy/stream?url={v['stream_url']}&referer=https://missav.ws/")
         }
         for v in virtual_catalog
+    ]
+
+@app.get("/api/embed/parse")
+def parse_embed_resource(input: str = Query(..., description="Video ID or URL"), platform: Optional[str] = "auto"):
+    """Parses video ID or URL from Pornhub, Xvideos, or MissAV and returns official embed iframe metadata."""
+    raw = input.strip()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Input cannot be empty")
+
+    plat_lower = platform.lower() if platform else "auto"
+
+    # 1. Pornhub Parsing
+    # Examples:
+    # https://www.pornhub.com/view_video.php?viewkey=ph628e576f3f886
+    # https://www.pornhub.com/embed/ph628e576f3f886
+    # ph628e576f3f886
+    ph_match = re.search(r"(?:viewkey=|/embed/|^)(ph[a-f0-9]{10,20})", raw, re.I)
+    if (plat_lower in ["auto", "pornhub"]) and (ph_match or "pornhub" in raw.lower()):
+        if ph_match:
+            vid = ph_match.group(1).lower()
+            embed_url = f"https://www.pornhub.com/embed/{vid}"
+            orig_url = f"https://www.pornhub.com/view_video.php?viewkey={vid}"
+            iframe = f'<iframe src="{embed_url}" frameborder="0" width="100%" height="100%" scrolling="no" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full rounded-xl"></iframe>'
+            return {
+                "status": "success",
+                "platform": "Pornhub",
+                "platform_badge": "🟧 Pornhub",
+                "id": vid,
+                "title": f"Pornhub Video [{vid}]",
+                "embed_url": embed_url,
+                "original_url": orig_url,
+                "iframe_code": iframe,
+                "rwd_wrapper": f'<div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-lg">{iframe}</div>'
+            }
+
+    # 2. Xvideos Parsing
+    # Examples:
+    # https://www.xvideos.com/video78541249/title
+    # https://www.xvideos.com/video.ubphoc8b1f8/title
+    # https://www.xvideos.com/embedframe/78541249
+    # 78541249 or ubphoc8b1f8
+    xv_match = re.search(r"/(?:video\.?|embedframe/)([a-z0-9_]+)", raw, re.I)
+    is_direct_id = raw.isdigit() and len(raw) >= 6
+    is_slug_id = bool(re.match(r"^[a-z0-9_]{6,16}$", raw, re.I)) and not raw.startswith("ph")
+
+    if (plat_lower in ["auto", "xvideos"]) and (xv_match or is_direct_id or is_slug_id or "xvideos" in raw.lower()):
+        vid = xv_match.group(1) if xv_match else raw
+        embed_url = f"https://www.xvideos.com/embedframe/{vid}"
+        orig_url = f"https://www.xvideos.com/video{vid}/" if vid.isdigit() else f"https://www.xvideos.com/video.{vid}/"
+        iframe = f'<iframe src="{embed_url}" frameborder="0" width="100%" height="100%" scrolling="no" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full rounded-xl"></iframe>'
+        return {
+            "status": "success",
+            "platform": "Xvideos",
+            "platform_badge": "🔴 Xvideos",
+            "id": vid,
+            "title": f"Xvideos Video [{vid}]",
+            "embed_url": embed_url,
+            "original_url": orig_url,
+            "iframe_code": iframe,
+            "rwd_wrapper": f'<div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-lg">{iframe}</div>'
+        }
+
+    # 3. MissAV Parsing
+    # Examples:
+    # https://missav.ws/ipx-888
+    # https://missav.com/stars-450
+    # IPX-888 or stars-450
+    missav_match = re.search(r"([a-z]{2,6}-[0-9]{3,5})", raw, re.I)
+    if (plat_lower in ["auto", "missav"]) and (missav_match or "missav" in raw.lower()):
+        code = (missav_match.group(1) if missav_match else raw.split("/")[-1]).upper().strip()
+        matched_item = next((v for v in virtual_catalog if v["code"].upper() == code), None)
+        title = matched_item["title"] if matched_item else f"MissAV 作品 [{code}]"
+        stream_url = matched_item["stream_url"] if matched_item else "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+        proxy_url = f"http://localhost:8080/proxy/stream?url={urllib.parse.quote(stream_url)}&referer=https://missav.ws/"
+        orig_url = f"https://missav.ws/{code.lower()}"
+        iframe = f'<iframe src="{orig_url}" frameborder="0" width="100%" height="100%" allowfullscreen class="w-full h-full rounded-xl"></iframe>'
+        return {
+            "status": "success",
+            "platform": "MissAV",
+            "platform_badge": "🟣 MissAV",
+            "id": code,
+            "title": title,
+            "embed_url": proxy_url,
+            "original_url": orig_url,
+            "iframe_code": iframe,
+            "proxy_stream_url": proxy_url,
+            "rwd_wrapper": f'<div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-lg">{iframe}</div>'
+        }
+
+    # Fallback generic iframe
+    if raw.startswith("http://") or raw.startswith("https://"):
+        iframe = f'<iframe src="{raw}" frameborder="0" width="100%" height="100%" allowfullscreen class="w-full h-full rounded-xl"></iframe>'
+        return {
+            "status": "success",
+            "platform": "Web",
+            "platform_badge": "🌐 Web Video",
+            "id": "CUSTOM",
+            "title": f"自訂內嵌視訊 ({raw[:30]}...)",
+            "embed_url": raw,
+            "original_url": raw,
+            "iframe_code": iframe,
+            "rwd_wrapper": f'<div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-lg">{iframe}</div>'
+        }
+
+    raise HTTPException(status_code=400, detail="無法辨識該輸入網址或 ID，請輸入有效的 Pornhub、Xvideos 或 MissAV 網址/代碼")
+
+@app.get("/api/embed/presets")
+def get_embed_presets():
+    """Returns curated presets for testing multi-platform video wall."""
+    return [
+        {
+            "id": "ph628e576f3f886",
+            "platform": "Pornhub",
+            "platform_badge": "🟧 Pornhub",
+            "title": "Pornhub 官方精選示範影片",
+            "embed_url": "https://www.pornhub.com/embed/ph628e576f3f886",
+            "original_url": "https://www.pornhub.com/view_video.php?viewkey=ph628e576f3f886",
+            "cover_url": "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=800&auto=format&fit=crop&q=80",
+            "type": "iframe"
+        },
+        {
+            "id": "78541249",
+            "platform": "Xvideos",
+            "platform_badge": "🔴 Xvideos",
+            "title": "Xvideos 官方精選示範影片",
+            "embed_url": "https://www.xvideos.com/embedframe/78541249",
+            "original_url": "https://www.xvideos.com/video78541249/",
+            "cover_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
+            "type": "iframe"
+        },
+        {
+            "id": "ph5e3b5e40e6988",
+            "platform": "Pornhub",
+            "platform_badge": "🟧 Pornhub",
+            "title": "Pornhub 4K 超高清特輯示範",
+            "embed_url": "https://www.pornhub.com/embed/ph5e3b5e40e6988",
+            "original_url": "https://www.pornhub.com/view_video.php?viewkey=ph5e3b5e40e6988",
+            "cover_url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&auto=format&fit=crop&q=80",
+            "type": "iframe"
+        },
+        {
+            "id": "IPX-888",
+            "platform": "MissAV",
+            "platform_badge": "🟣 MissAV",
+            "title": "【4K極清】相澤南 沉浸式浪漫企劃 4K原画無修正流出",
+            "embed_url": "http://localhost:8080/proxy/stream?url=https%3A%2F%2Ftest-streams.mux.dev%2Fx36xhzz%2Fx36xhzz.m3u8&referer=https%3A%2F%2Fmissav.ws%2F",
+            "original_url": "https://missav.ws/ipx-888",
+            "cover_url": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop&q=80",
+            "type": "hls_or_modal"
+        },
+        {
+            "id": "STARS-450",
+            "platform": "MissAV",
+            "platform_badge": "🟣 MissAV",
+            "title": "【S1旗艦】河北彩花 年度最美臉孔 頂級電影級調色大作",
+            "embed_url": "http://localhost:8080/proxy/stream?url=https%3A%2F%2Fdevstreaming-cdn.apple.com%2Fvideos%2Fstreaming%2Fexamples%2Fbipbop_16x9%2Fbipbop_16x9_variant.m3u8&referer=https%3A%2F%2Fmissav.ws%2F",
+            "original_url": "https://missav.ws/stars-450",
+            "cover_url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&auto=format&fit=crop&q=80",
+            "type": "hls_or_modal"
+        }
     ]
 
 @app.get("/api/status")

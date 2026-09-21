@@ -153,6 +153,9 @@
             <button onclick="switchCategory('paths')" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-missav-card whitespace-nowrap transition-all" data-cat="paths">
                 <i class="fa-solid fa-network-wired mr-1.5 text-emerald-400"></i>📋 影音路徑與 MissAV 對照表
             </button>
+            <button onclick="switchCategory('videowall')" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-missav-card whitespace-nowrap transition-all" data-cat="videowall">
+                <i class="fa-solid fa-border-all mr-1.5 text-amber-400"></i>🎬 跨平台影音牆 (Pornhub / Xvideos / MissAV)
+            </button>
         </nav>
     </header>
 
@@ -230,6 +233,118 @@
 
         <!-- Video Paths Directory Section Container (Hidden by default) -->
         <div id="paths-catalog" class="hidden flex flex-col space-y-4"></div>
+
+        <!-- Multi-Platform Video Wall Section Container (Hidden by default) -->
+        <div id="videowall-section" class="hidden flex flex-col space-y-6">
+            <!-- Generator & Controller Box -->
+            <div class="bg-missav-card border border-missav-border rounded-2xl p-5 lg:p-6 shadow-2xl relative overflow-hidden">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-missav-border pb-5 mb-5">
+                    <div>
+                        <div class="flex items-center space-x-2.5">
+                            <span class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 font-mono text-xs font-bold border border-amber-500/30">
+                                <i class="fa-solid fa-border-all mr-1.5"></i>RWD 16:9 VIDEO WALL
+                            </span>
+                            <h3 class="text-base lg:text-lg font-bold text-slate-100">
+                                跨平台影音牆生成器 (Pornhub · Xvideos · MissAV)
+                            </h3>
+                        </div>
+                        <p class="text-xs text-slate-400 font-mono mt-1">
+                            支援輸入 Pornhub 或 Xvideos 的任意網址或影片 ID，自動提取官方標準 iframe 嵌入碼，並透過 16:9 比例容器在網頁上自適應串接播放。
+                        </p>
+                    </div>
+
+                    <!-- Wall Preset & Clear Actions -->
+                    <div class="flex items-center space-x-2 flex-shrink-0">
+                        <button onclick="loadDefaultWallPresets()" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-missav-border text-xs font-mono flex items-center space-x-1.5 transition-all shadow">
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+                            <span>一鍵載入示範牆</span>
+                        </button>
+                        <button onclick="clearVideoWall()" class="px-3.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 border border-missav-border text-xs font-mono flex items-center space-x-1.5 transition-all">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span>清空牆面</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Input Row -->
+                <div class="space-y-3">
+                    <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2.5">
+                        <!-- Platform selector -->
+                        <div class="flex items-center space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 flex-shrink-0">
+                            <button onclick="setWallInputPlatform('auto')" class="wall-plat-btn px-2.5 py-1.5 rounded-lg text-xs font-mono font-medium bg-missav-primary text-white" data-plat="auto">🤖 自動辨識</button>
+                            <button onclick="setWallInputPlatform('pornhub')" class="wall-plat-btn px-2.5 py-1.5 rounded-lg text-xs font-mono text-slate-400 hover:text-amber-400" data-plat="pornhub">🟧 Pornhub</button>
+                            <button onclick="setWallInputPlatform('xvideos')" class="wall-plat-btn px-2.5 py-1.5 rounded-lg text-xs font-mono text-slate-400 hover:text-rose-400" data-plat="xvideos">🔴 Xvideos</button>
+                            <button onclick="setWallInputPlatform('missav')" class="wall-plat-btn px-2.5 py-1.5 rounded-lg text-xs font-mono text-slate-400 hover:text-purple-400" data-plat="missav">🟣 MissAV</button>
+                        </div>
+
+                        <!-- Input box -->
+                        <div class="relative flex-1">
+                            <input type="text" id="wall-input-url" placeholder="貼上 Xvideos / Pornhub 網址或影片 ID (例如: https://www.pornhub.com/view_video.php?viewkey=ph... 或 78541249 或 IPX-888)..." 
+                                onkeydown="if(event.key === 'Enter') handleAddVideoToWall()"
+                                class="w-full bg-slate-950 border border-slate-800 focus:border-missav-primary rounded-xl px-4 py-2.5 text-xs text-slate-100 font-mono focus:outline-none transition-all pr-10">
+                            <button onclick="document.getElementById('wall-input-url').value=''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <!-- Add Button -->
+                        <button onclick="handleAddVideoToWall()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-missav-primary to-purple-600 hover:from-purple-500 hover:to-pink-600 text-white font-mono font-semibold text-xs flex items-center justify-center space-x-2 shadow-lg shadow-purple-900/30 transition-all flex-shrink-0">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                            <span>加入影片牆</span>
+                        </button>
+                    </div>
+
+                    <!-- Quick Template Chips -->
+                    <div class="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-400 pt-1">
+                        <span class="text-slate-500">快速填入測試:</span>
+                        <button onclick="fillWallInput('https://www.pornhub.com/view_video.php?viewkey=ph628e576f3f886', 'pornhub')" class="px-2 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-800">🟧 Pornhub URL</button>
+                        <button onclick="fillWallInput('ph628e576f3f886', 'pornhub')" class="px-2 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-800">🟧 Pornhub ID (ph...)</button>
+                        <button onclick="fillWallInput('https://www.xvideos.com/video78541249/demo', 'xvideos')" class="px-2 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 text-rose-400 border border-slate-800">🔴 Xvideos URL</button>
+                        <button onclick="fillWallInput('78541249', 'xvideos')" class="px-2 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 text-rose-400 border border-slate-800">🔴 Xvideos ID (數字)</button>
+                        <button onclick="fillWallInput('IPX-888', 'missav')" class="px-2 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 text-purple-400 border border-slate-800">🟣 MissAV 番號</button>
+                    </div>
+                </div>
+
+                <!-- Generated Embed Code Inspector Box -->
+                <div id="embed-code-inspector" class="hidden mt-5 pt-4 border-t border-slate-800/80 space-y-2">
+                    <div class="flex items-center justify-between text-xs font-mono">
+                        <span class="text-missav-cyan font-bold flex items-center">
+                            <i class="fa-solid fa-code mr-1.5"></i>官方標準 iframe 嵌入代碼 (16:9 RWD 自適應容器)
+                        </span>
+                        <button onclick="copyGeneratedIframe()" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] flex items-center space-x-1">
+                            <i class="fa-solid fa-copy"></i>
+                            <span>複製完整代碼</span>
+                        </button>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 font-mono text-[11px] text-emerald-300 overflow-x-auto select-all" id="embed-code-preview">
+                        &lt;iframe src="..." ...&gt;&lt;/iframe&gt;
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Wall Toolbar (Layout Grid Columns & Counts) -->
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-missav-card/70 border border-missav-border rounded-xl px-4 py-2.5 text-xs font-mono">
+                <div class="flex items-center space-x-3">
+                    <span class="text-slate-300 font-bold flex items-center">
+                        <i class="fa-solid fa-display text-missav-primary mr-1.5"></i>
+                        目前影片牆清單
+                    </span>
+                    <span id="wall-count-badge" class="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700 text-[11px]">0 部影片</span>
+                </div>
+
+                <!-- Grid Column Controls -->
+                <div class="flex items-center space-x-1.5">
+                    <span class="text-slate-400">欄位佈局:</span>
+                    <button onclick="setWallColumns(1)" class="wall-col-btn px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white" data-cols="1">1 欄</button>
+                    <button onclick="setWallColumns(2)" class="wall-col-btn px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white" data-cols="2">2 欄</button>
+                    <button onclick="setWallColumns(3)" class="wall-col-btn px-2.5 py-1 rounded-lg bg-missav-primary text-white" data-cols="3">3 欄</button>
+                    <button onclick="setWallColumns(4)" class="wall-col-btn px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white" data-cols="4">4 欄</button>
+                </div>
+            </div>
+
+            <!-- Video Wall Grid Container -->
+            <div id="video-wall-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+        </div>
     </main>
 
     <!-- Cinema Mode Player Modal (劇院播放模式視窗) -->
@@ -432,11 +547,16 @@
         let totalLogs = 0;
         let logFilter = 'ALL';
 
-        // LocalStorage Favorites
+        // LocalStorage Favorites & Video Wall State
         let favoritesList = JSON.parse(localStorage.getItem('missav_favorites') || '[]');
+        let videoWallList = JSON.parse(localStorage.getItem('missav_video_wall') || 'null');
+        let currentWallPlatform = 'auto';
+        let currentWallColumns = 3;
+        let lastGeneratedIframe = '';
 
         document.addEventListener('DOMContentLoaded', () => {
             updateFavoriteCounter();
+            initVideoWall();
             loadVideos();
             loadActresses();
             loadTags();
@@ -468,7 +588,15 @@
                         renderActressesView();
                     } else if (currentCategory === 'tags') {
                         renderTagsView();
+                    } else if (currentCategory === 'videowall') {
+                        renderVideoWallView();
                     } else {
+                        document.getElementById('videowall-section').classList.add('hidden');
+                        document.getElementById('paths-catalog').classList.add('hidden');
+                        document.getElementById('actresses-catalog').classList.add('hidden');
+                        document.getElementById('tags-catalog').classList.add('hidden');
+                        document.getElementById('video-catalog').classList.remove('hidden');
+                        document.getElementById('sub-filter-bar').classList.remove('hidden');
                         renderVideoCards(allVideos);
                     }
                 }
@@ -777,6 +905,421 @@
             }
         }
 
+        // ==========================================
+        // 4.2 Multi-Platform Video Wall Component (Pornhub / Xvideos / MissAV)
+        // ==========================================
+
+        const DEFAULT_WALL_PRESETS = [
+            {
+                id: "ph628e576f3f886",
+                platform: "Pornhub",
+                platform_badge: "🟧 Pornhub",
+                title: "Pornhub 官方精選示範影片",
+                embed_url: "https://www.pornhub.com/embed/ph628e576f3f886",
+                original_url: "https://www.pornhub.com/view_video.php?viewkey=ph628e576f3f886",
+                iframe_code: '<iframe src="https://www.pornhub.com/embed/ph628e576f3f886" frameborder="0" width="100%" height="100%" scrolling="no" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full rounded-xl"></iframe>'
+            },
+            {
+                id: "78541249",
+                platform: "Xvideos",
+                platform_badge: "🔴 Xvideos",
+                title: "Xvideos 官方精選示範影片",
+                embed_url: "https://www.xvideos.com/embedframe/78541249",
+                original_url: "https://www.xvideos.com/video78541249/",
+                iframe_code: '<iframe src="https://www.xvideos.com/embedframe/78541249" frameborder="0" width="100%" height="100%" scrolling="no" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full rounded-xl"></iframe>'
+            },
+            {
+                id: "ph5e3b5e40e6988",
+                platform: "Pornhub",
+                platform_badge: "🟧 Pornhub",
+                title: "Pornhub 4K 超高清特輯示範",
+                embed_url: "https://www.pornhub.com/embed/ph5e3b5e40e6988",
+                original_url: "https://www.pornhub.com/view_video.php?viewkey=ph5e3b5e40e6988",
+                iframe_code: '<iframe src="https://www.pornhub.com/embed/ph5e3b5e40e6988" frameborder="0" width="100%" height="100%" scrolling="no" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full rounded-xl"></iframe>'
+            },
+            {
+                id: "IPX-888",
+                platform: "MissAV",
+                platform_badge: "🟣 MissAV",
+                title: "【4K極清】相澤南 沉浸式浪漫企劃 4K原画無修正流出",
+                embed_url: "http://localhost:8080/proxy/stream?url=https%3A%2F%2Ftest-streams.mux.dev%2Fx36xhzz%2Fx36xhzz.m3u8&referer=https%3A%2F%2Fmissav.ws%2F",
+                original_url: "https://missav.ws/ipx-888",
+                iframe_code: '<iframe src="https://missav.ws/ipx-888" frameborder="0" width="100%" height="100%" allowfullscreen class="w-full h-full rounded-xl"></iframe>'
+            }
+        ];
+
+        function initVideoWall() {
+            if (!videoWallList || videoWallList.length === 0) {
+                videoWallList = DEFAULT_WALL_PRESETS.map(p => ({ ...p }));
+                localStorage.setItem('missav_video_wall', JSON.stringify(videoWallList));
+            }
+        }
+
+        function setWallInputPlatform(plat) {
+            currentWallPlatform = plat;
+            document.querySelectorAll('.wall-plat-btn').forEach(btn => {
+                if (btn.dataset.plat === plat) {
+                    btn.className = "wall-plat-btn px-2.5 py-1.5 rounded-lg text-xs font-mono font-medium bg-missav-primary text-white";
+                } else {
+                    btn.className = "wall-plat-btn px-2.5 py-1.5 rounded-lg text-xs font-mono text-slate-400 hover:text-white";
+                }
+            });
+        }
+
+        function fillWallInput(val, plat) {
+            const input = document.getElementById('wall-input-url');
+            if (input) {
+                input.value = val;
+                input.focus();
+            }
+            if (plat) setWallInputPlatform(plat);
+            showToast(`已填入範例：${val}`);
+        }
+
+        function setWallColumns(cols) {
+            currentWallColumns = cols;
+            document.querySelectorAll('.wall-col-btn').forEach(btn => {
+                if (parseInt(btn.dataset.cols) === cols) {
+                    btn.className = "wall-col-btn px-2.5 py-1 rounded-lg bg-missav-primary text-white font-bold";
+                } else {
+                    btn.className = "wall-col-btn px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white";
+                }
+            });
+
+            const grid = document.getElementById('video-wall-grid');
+            if (!grid) return;
+            if (cols === 1) {
+                grid.className = "grid grid-cols-1 max-w-4xl mx-auto gap-6 w-full";
+            } else if (cols === 2) {
+                grid.className = "grid grid-cols-1 md:grid-cols-2 gap-6 w-full";
+            } else if (cols === 3) {
+                grid.className = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full";
+            } else if (cols === 4) {
+                grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full";
+            }
+        }
+
+        function renderVideoWallView() {
+            document.getElementById('video-catalog').classList.add('hidden');
+            document.getElementById('actresses-catalog').classList.add('hidden');
+            document.getElementById('tags-catalog').classList.add('hidden');
+            document.getElementById('paths-catalog').classList.add('hidden');
+            document.getElementById('videowall-section').classList.remove('hidden');
+            document.getElementById('sub-filter-bar').classList.add('hidden');
+            document.getElementById('section-title-text').innerText = "🎬 跨平台 RWD 響應式影音牆 (Pornhub / Xvideos / MissAV)";
+            document.getElementById('results-count').innerText = `${videoWallList.length} 部牆面視訊`;
+
+            renderVideoWallGrid();
+        }
+
+        function renderVideoWallGrid() {
+            const grid = document.getElementById('video-wall-grid');
+            const badge = document.getElementById('wall-count-badge');
+            if (badge) badge.innerText = `${videoWallList.length} 部影片`;
+            if (!grid) return;
+
+            if (videoWallList.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-20 flex flex-col items-center justify-center space-y-3 text-slate-400 bg-missav-card border border-dashed border-missav-border rounded-2xl">
+                        <i class="fa-solid fa-film text-4xl text-slate-600 mb-1"></i>
+                        <h4 class="text-sm font-bold text-slate-200">影片牆目前是空的</h4>
+                        <p class="text-xs font-mono text-slate-500">在上方輸入 Xvideos / Pornhub 網址或點擊「一鍵載入示範牆」即可快速預覽！</p>
+                        <button onclick="loadDefaultWallPresets()" class="mt-2 px-4 py-2 rounded-xl bg-missav-primary hover:bg-purple-600 text-white text-xs font-mono font-semibold shadow">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>載入精選示範牆
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = videoWallList.map((item, idx) => {
+                const cardId = `wall-card-${idx}`;
+                const isMissav = item.platform === 'MissAV';
+                const badgeColor = item.platform === 'Pornhub' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                                   item.platform === 'Xvideos' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' :
+                                   'bg-purple-500/20 text-purple-400 border-purple-500/30';
+
+                let videoStageHtml = '';
+                if (isMissav) {
+                    videoStageHtml = `
+                        <div class="relative w-full aspect-video bg-slate-950 flex flex-col items-center justify-center p-6 text-center group/stage">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent z-0"></div>
+                            <div class="relative z-10 space-y-3 max-w-xs">
+                                <span class="px-2.5 py-1 rounded bg-missav-primary/30 text-missav-primary border border-missav-primary/40 font-mono text-xs font-bold">
+                                    ${item.id}
+                                </span>
+                                <h5 class="text-xs font-medium text-slate-200 line-clamp-2">${item.title}</h5>
+                                <div class="flex items-center justify-center space-x-2 pt-1">
+                                    <button onclick="openCinemaMode('${item.id}')" class="px-3 py-1.5 rounded-lg bg-missav-primary hover:bg-purple-600 text-white text-xs font-mono font-semibold shadow-lg flex items-center space-x-1.5 transition-all">
+                                        <i class="fa-solid fa-play text-[10px]"></i>
+                                        <span>劇院 Proxy 播放</span>
+                                    </button>
+                                    <a href="${item.original_url}" target="_blank" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-mono border border-slate-700 flex items-center space-x-1">
+                                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-pink-400"></i>
+                                        <span>原站</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Standard RWD 16:9 iframe embed
+                    videoStageHtml = `
+                        <div class="relative w-full aspect-video bg-black overflow-hidden">
+                            <iframe 
+                                src="${item.embed_url}" 
+                                frameborder="0" 
+                                width="100%" 
+                                height="100%" 
+                                scrolling="no" 
+                                allowfullscreen 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                class="w-full h-full object-cover">
+                            </iframe>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div id="${cardId}" class="bg-missav-card border border-missav-border hover:border-slate-600 rounded-2xl overflow-hidden flex flex-col shadow-xl transition-all glow-hover">
+                        <!-- Card Header -->
+                        <div class="px-4 py-2.5 bg-slate-950/90 border-b border-missav-border flex items-center justify-between gap-2 text-xs font-mono">
+                            <div class="flex items-center space-x-2 min-w-0">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor} whitespace-nowrap">
+                                    ${item.platform_badge || item.platform}
+                                </span>
+                                <span class="text-slate-200 font-semibold truncate text-[11px]" title="${item.title}">
+                                    ${item.title}
+                                </span>
+                            </div>
+
+                            <div class="flex items-center space-x-1.5 flex-shrink-0">
+                                <button onclick="toggleCardFullscreen('${cardId}')" class="p-1 text-slate-400 hover:text-white transition-colors" title="全螢幕切換">
+                                    <i class="fa-solid fa-expand text-xs"></i>
+                                </button>
+                                <button onclick="copyWallItemIframe(${idx})" class="p-1 text-slate-400 hover:text-missav-cyan transition-colors" title="複製官方 iframe 代碼">
+                                    <i class="fa-solid fa-code text-xs"></i>
+                                </button>
+                                <a href="${item.original_url}" target="_blank" class="p-1 text-slate-400 hover:text-pink-400 transition-colors" title="開啟原網站">
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                                </a>
+                                <button onclick="removeVideoFromWall(${idx})" class="p-1 text-slate-400 hover:text-rose-400 transition-colors" title="從牆面移除">
+                                    <i class="fa-solid fa-xmark text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 16:9 RWD Responsive Video Stage -->
+                        ${videoStageHtml}
+
+                        <!-- Card Footer Info -->
+                        <div class="px-3.5 py-2 bg-slate-950/60 border-t border-missav-border/60 flex items-center justify-between text-[10px] font-mono text-slate-400">
+                            <span class="truncate max-w-[200px] text-slate-500">ID: ${item.id}</span>
+                            <span class="text-emerald-400 flex items-center space-x-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                <span>RWD 16:9 官方嵌入</span>
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function handleAddVideoToWall() {
+            const inputEl = document.getElementById('wall-input-url');
+            if (!inputEl) return;
+            const raw = inputEl.value.trim();
+            if (!raw) {
+                showToast("請輸入影片網址或 ID！");
+                return;
+            }
+
+            try {
+                // 1. Request server-side parser
+                const res = await fetch(`${PY_API}/api/embed/parse?input=${encodeURIComponent(raw)}&platform=${currentWallPlatform}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    videoWallList.unshift({
+                        id: data.id,
+                        platform: data.platform,
+                        platform_badge: data.platform_badge,
+                        title: data.title,
+                        embed_url: data.embed_url,
+                        original_url: data.original_url,
+                        iframe_code: data.iframe_code
+                    });
+
+                    // Update UI & LocalStorage
+                    localStorage.setItem('missav_video_wall', JSON.stringify(videoWallList));
+                    renderVideoWallGrid();
+                    showIframePreview(data.iframe_code, data.rwd_wrapper);
+                    inputEl.value = '';
+                    showToast(`✅ 已成功加入 [${data.platform}] 視訊至影音牆！`);
+                    return;
+                }
+            } catch (err) {
+                console.warn("Backend parse error, trying local client-side parse fallback:", err);
+            }
+
+            // 2. Client-side Regex Fallback
+            const localParsed = parseEmbedClientSide(raw, currentWallPlatform);
+            if (localParsed) {
+                videoWallList.unshift(localParsed);
+                localStorage.setItem('missav_video_wall', JSON.stringify(videoWallList));
+                renderVideoWallGrid();
+                showIframePreview(localParsed.iframe_code, localParsed.rwd_wrapper);
+                inputEl.value = '';
+                showToast(`✅ [客戶端解析] 已成功加入 [${localParsed.platform}] 視訊！`);
+            } else {
+                showToast("❌ 無法辨識該網址或 ID，請檢查格式是否正確。");
+            }
+        }
+
+        function parseEmbedClientSide(raw, plat) {
+            const platLower = plat ? plat.toLowerCase() : 'auto';
+
+            // Pornhub
+            const phMatch = raw.match(/(?:viewkey=|\/embed\/|^)(ph[a-f0-9]{10,20})/i);
+            if ((platLower === 'auto' || platLower === 'pornhub') && (phMatch || raw.toLowerCase().includes('pornhub'))) {
+                const vid = phMatch ? phMatch[1].toLowerCase() : raw;
+                const embedUrl = `https://www.pornhub.com/embed/${vid}`;
+                const origUrl = `https://www.pornhub.com/view_video.php?viewkey=${vid}`;
+                const iframe = `<iframe src="${embedUrl}" frameborder="0" width="100%" height="100%" scrolling="no" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full rounded-xl"></iframe>`;
+                return {
+                    id: vid,
+                    platform: 'Pornhub',
+                    platform_badge: '🟧 Pornhub',
+                    title: `Pornhub Video [${vid}]`,
+                    embed_url: embedUrl,
+                    original_url: origUrl,
+                    iframe_code: iframe,
+                    rwd_wrapper: `<div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-lg">${iframe}</div>`
+                };
+            }
+
+            // Xvideos
+            const xvMatch = raw.match(/\/(?:video\.?|embedframe\/)([a-z0-9_]+)/i);
+            const isDigit = /^\d{6,12}$/.test(raw);
+            const isSlug = /^[a-z0-9_]{6,16}$/i.test(raw) && !raw.startsWith('ph');
+            if ((platLower === 'auto' || platLower === 'xvideos') && (xvMatch || isDigit || isSlug || raw.toLowerCase().includes('xvideos'))) {
+                const vid = xvMatch ? xvMatch[1] : raw;
+                const embedUrl = `https://www.xvideos.com/embedframe/${vid}`;
+                const origUrl = /^\d+$/.test(vid) ? `https://www.xvideos.com/video${vid}/` : `https://www.xvideos.com/video.${vid}/`;
+                const iframe = `<iframe src="${embedUrl}" frameborder="0" width="100%" height="100%" scrolling="no" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full rounded-xl"></iframe>`;
+                return {
+                    id: vid,
+                    platform: 'Xvideos',
+                    platform_badge: '🔴 Xvideos',
+                    title: `Xvideos Video [${vid}]`,
+                    embed_url: embedUrl,
+                    original_url: origUrl,
+                    iframe_code: iframe,
+                    rwd_wrapper: `<div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-lg">${iframe}</div>`
+                };
+            }
+
+            // MissAV
+            const msvMatch = raw.match(/([a-z]{2,6}-[0-9]{3,5})/i);
+            if ((platLower === 'auto' || platLower === 'missav') && (msvMatch || raw.toLowerCase().includes('missav'))) {
+                const code = (msvMatch ? msvMatch[1] : raw.split('/').pop()).toUpperCase().trim();
+                const origUrl = `https://missav.ws/${code.toLowerCase()}`;
+                const iframe = `<iframe src="${origUrl}" frameborder="0" width="100%" height="100%" allowfullscreen class="w-full h-full rounded-xl"></iframe>`;
+                return {
+                    id: code,
+                    platform: 'MissAV',
+                    platform_badge: '🟣 MissAV',
+                    title: `MissAV 作品 [${code}]`,
+                    embed_url: `http://localhost:8080/proxy/stream?url=https%3A%2F%2Ftest-streams.mux.dev%2Fx36xhzz%2Fx36xhzz.m3u8&referer=https%3A%2F%2Fmissav.ws%2F`,
+                    original_url: origUrl,
+                    iframe_code: iframe,
+                    rwd_wrapper: `<div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-lg">${iframe}</div>`
+                };
+            }
+
+            return null;
+        }
+
+        function showIframePreview(iframeCode, wrapperCode) {
+            const inspector = document.getElementById('embed-code-inspector');
+            const preview = document.getElementById('embed-code-preview');
+            if (inspector && preview) {
+                lastGeneratedIframe = wrapperCode || iframeCode;
+                preview.innerText = lastGeneratedIframe;
+                inspector.classList.remove('hidden');
+            }
+        }
+
+        function copyGeneratedIframe() {
+            if (!lastGeneratedIframe) return;
+            navigator.clipboard.writeText(lastGeneratedIframe);
+            showToast("已複製 16:9 RWD iframe 完整嵌入語法至剪貼簿！");
+        }
+
+        function copyWallItemIframe(index) {
+            const item = videoWallList[index];
+            if (!item) return;
+            const code = `<div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-lg">\n  ${item.iframe_code}\n</div>`;
+            navigator.clipboard.writeText(code);
+            showToast(`已複製 [${item.platform}] 官方 iframe 嵌入代碼！`);
+        }
+
+        function removeVideoFromWall(index) {
+            if (index >= 0 && index < videoWallList.length) {
+                const removed = videoWallList.splice(index, 1);
+                localStorage.setItem('missav_video_wall', JSON.stringify(videoWallList));
+                renderVideoWallGrid();
+                showToast(`已從影片牆移除：${removed[0].title}`);
+            }
+        }
+
+        function clearVideoWall() {
+            videoWallList = [];
+            localStorage.setItem('missav_video_wall', JSON.stringify([]));
+            renderVideoWallGrid();
+            showToast("已清空影音牆面。");
+        }
+
+        async function loadDefaultWallPresets() {
+            try {
+                const res = await fetch(`${PY_API}/api/embed/presets`);
+                if (res.ok) {
+                    const presets = await res.json();
+                    videoWallList = presets.map(p => ({
+                        ...p,
+                        iframe_code: `<iframe src="${p.embed_url}" frameborder="0" width="100%" height="100%" scrolling="no" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full rounded-xl"></iframe>`
+                    }));
+                    localStorage.setItem('missav_video_wall', JSON.stringify(videoWallList));
+                    renderVideoWallGrid();
+                    showToast("🎉 已成功載入 5 部精選示範影片！");
+                    return;
+                }
+            } catch (e) {
+                console.warn("Preset fetch error, using fallback presets:", e);
+            }
+
+            videoWallList = DEFAULT_WALL_PRESETS.map(p => ({ ...p }));
+            localStorage.setItem('missav_video_wall', JSON.stringify(videoWallList));
+            renderVideoWallGrid();
+            showToast("🎉 已成功載入預設示範影片牆！");
+        }
+
+        function toggleCardFullscreen(cardId) {
+            const el = document.getElementById(cardId);
+            if (!el) return;
+            if (!document.fullscreenElement) {
+                if (el.requestFullscreen) {
+                    el.requestFullscreen();
+                } else if (el.webkitRequestFullscreen) {
+                    el.webkitRequestFullscreen();
+                }
+                showToast("已進入全螢幕播放");
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
         function copyElementText(id) {
             const el = document.getElementById(id);
             if (!el) return;
@@ -1053,11 +1596,14 @@
                 'actresses': '👩‍🎤 熱門女優專區',
                 'tags': '🏷️ 分類標籤雲',
                 'favorites': '❤️ 我的收藏作品',
-                'paths': '📋 影音路徑與 MissAV 來源對照表'
+                'paths': '📋 影音路徑與 MissAV 來源對照表',
+                'videowall': '🎬 跨平台 RWD 響應式影音牆 (Pornhub / Xvideos / MissAV)'
             };
             document.getElementById('section-title-text').innerText = titles[cat] || '影片列表';
             if (cat === 'paths') {
                 renderPathsView();
+            } else if (cat === 'videowall') {
+                renderVideoWallView();
             } else {
                 loadVideos();
             }
