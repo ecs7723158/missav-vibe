@@ -261,11 +261,21 @@
 
             <!-- Cinema Video Stage -->
             <div class="relative w-full aspect-video bg-black flex items-center justify-center">
-                <video id="cinema-video" controls class="w-full h-full object-contain"></video>
+                <video id="cinema-video" controls playsinline class="w-full h-full object-contain"></video>
             </div>
 
             <!-- Player Toolbar & Info -->
             <div class="p-5 space-y-4">
+                <!-- Custom M3U8 Stream Tester Input Bar -->
+                <div class="flex items-center space-x-2 bg-slate-900/90 p-2.5 rounded-xl border border-missav-border">
+                    <span class="text-[11px] font-mono text-slate-400 whitespace-nowrap"><i class="fa-solid fa-link text-missav-cyan mr-1"></i>測試串流網址:</span>
+                    <input type="text" id="cinema-custom-url" placeholder="貼上任意真實 .m3u8 串流網址進行防盜鏈代理播放測試..." class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-100 font-mono focus:outline-none focus:border-missav-primary">
+                    <button onclick="playCustomCinemaUrl()" class="px-3 py-1 rounded-lg bg-missav-primary hover:bg-purple-600 text-white text-xs font-semibold font-mono flex items-center space-x-1 whitespace-nowrap shadow">
+                        <i class="fa-solid fa-play text-[10px]"></i>
+                        <span>Proxy 播放</span>
+                    </button>
+                </div>
+
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b border-missav-border pb-4">
                     <div class="flex items-center space-x-4 text-xs font-mono text-slate-400">
                         <span>女優: <strong id="cinema-actress" class="text-missav-cyan cursor-pointer hover:underline" onclick="filterByActress(this.innerText)">--</strong></span>
@@ -842,16 +852,62 @@
             const videoEl = document.getElementById('cinema-video');
             if (Hls.isSupported()) {
                 if (hlsInstance) hlsInstance.destroy();
-                hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true });
+                hlsInstance = new Hls({ 
+                    enableWorker: true, 
+                    lowLatencyMode: true,
+                    backBufferLength: 90
+                });
                 hlsInstance.loadSource(streamTarget);
                 hlsInstance.attachMedia(videoEl);
                 hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-                    videoEl.play().catch(e => console.log("Autoplay:", e));
+                    videoEl.play().catch(e => {
+                        console.log("Autoplay paused by browser policy. Click play on video controls to start:", e);
+                    });
+                });
+                hlsInstance.on(Hls.Events.ERROR, (event, data) => {
+                    if (data.fatal) {
+                        console.warn("HLS Error:", data.type, data.details);
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                hlsInstance.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                hlsInstance.recoverMediaError();
+                                break;
+                            default:
+                                showToast("串流連線受限，可切換直連模式或在原站觀看");
+                                break;
+                        }
+                    }
                 });
             } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
                 videoEl.src = streamTarget;
-                videoEl.play();
+                videoEl.play().catch(e => console.log("Autoplay:", e));
             }
+        }
+
+        function playCustomCinemaUrl() {
+            const input = document.getElementById('cinema-custom-url').value.trim();
+            if (!input) {
+                showToast("請輸入 .m3u8 串流網址");
+                return;
+            }
+            if (activeVideo) {
+                activeVideo.stream_url = input;
+            } else {
+                activeVideo = {
+                    code: 'TEST-STREAM',
+                    title: '自訂測試串流',
+                    actress: '自訂來源',
+                    release_date: '2026-09-21',
+                    rating: 9.9,
+                    views: 100,
+                    stream_url: input,
+                    tags: ['測試']
+                };
+            }
+            playStreamForActiveVideo();
+            showToast("已載入自訂串流！正在透過 Go Proxy 代理播放...");
         }
 
         function toggleProxyPlayback() {
